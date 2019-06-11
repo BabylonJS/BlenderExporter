@@ -178,6 +178,7 @@ class Mesh(FCurveAnimatable):
         # Getting vertices and indices
         self.positions  = []
         self.normals    = []
+        self.tangents   = [] # not always used, only when split normals are used
         self.uvs        = [] # not always used
         self.uvs2       = [] # not always used
         self.colors     = [] # not always used
@@ -219,6 +220,7 @@ class Mesh(FCurveAnimatable):
         # used tracking of vertices as they are received
         alreadySavedVertices = []
         vertices_Normals = []
+        vertices_Tangents = []
         vertices_UVs = []
         vertices_UV2s = []
         vertices_Colors = []
@@ -229,6 +231,7 @@ class Mesh(FCurveAnimatable):
         for v in range(len(mesh.vertices)):
             alreadySavedVertices.append(False)
             vertices_Normals.append([])
+            vertices_Tangents.append([])
             vertices_UVs.append([])
             vertices_UV2s.append([])
             vertices_Colors.append([])
@@ -258,7 +261,8 @@ class Mesh(FCurveAnimatable):
 
                     if mesh.has_custom_normals:
                         split_normal = tri.split_normals[v]
-                        normal = Vector(split_normal)
+                        normal = Vector(split_normal)                        
+                        tangent = Vector(mesh.loops[loop_index].tangent)
                     elif tri.use_smooth:
                         normal = vertex.normal
                     else:
@@ -302,6 +306,11 @@ class Mesh(FCurveAnimatable):
                             if not same_vertex(normal, vNormal, world.normalsPrecision):
                                 continue;
 
+                            if mesh.has_custom_normals:
+                                vTangent = vertices_Tangents[vertex_index][index_UV]
+                                if not same_vertex(tangent, vTangent, world.normalsPrecision):
+                                    continue;
+
                             if hasUV:
                                 vUV = vertices_UVs[vertex_index][index_UV]
                                 if not same_array(vertex_UV, vUV, world.UVsPrecision):
@@ -339,6 +348,10 @@ class Mesh(FCurveAnimatable):
 
                         vertices_Normals[vertex_index].append(normal)
                         self.normals.append(normal)
+
+                        if mesh.has_custom_normals:
+                            vertices_Tangents[vertex_index].append(tangent)
+                            self.tangents.append(tangent)
 
                         if hasUV:
                             vertices_UVs[vertex_index].append(vertex_UV)
@@ -384,6 +397,7 @@ class Mesh(FCurveAnimatable):
 
         Logger.log('num positions      :  ' + str(len(self.positions)), 2)
         Logger.log('num normals        :  ' + str(len(self.normals  )), 2)
+        Logger.log('num tangents       :  ' + str(len(self.tangents )), 2)
         Logger.log('num uvs            :  ' + str(len(self.uvs      )), 2)
         Logger.log('num uvs2           :  ' + str(len(self.uvs2     )), 2)
         Logger.log('num colors         :  ' + str(len(self.colors   )), 2)
@@ -491,8 +505,8 @@ class Mesh(FCurveAnimatable):
             bm.to_mesh(mesh)
             mesh.calc_loop_triangles()
             if mesh.has_custom_normals:
-                mesh.calc_normals_split()
-                Logger.log('Custom split normals being used', 2)
+                mesh.calc_tangents() # also calcs split normals
+                Logger.log('Custom split normals with tangents being used', 2)
 
             bm.free()
         except:
@@ -616,6 +630,9 @@ class Mesh(FCurveAnimatable):
         write_vector_array(file_handler, 'positions', self.positions, world.positionsPrecision)
         write_vector_array(file_handler, 'normals'  , self.normals, world.normalsPrecision)
 
+        if len(self.tangents) > 0:
+            write_vector_array(file_handler, 'tangents'  , self.tangents, world.normalsPrecision)
+            
         if len(self.uvs) > 0:
             write_array(file_handler, 'uvs', self.uvs, world.UVsPrecision)
 
