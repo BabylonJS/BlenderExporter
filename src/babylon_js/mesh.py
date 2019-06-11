@@ -43,8 +43,8 @@ class Mesh(FCurveAnimatable):
         self.define_animations(bpyMesh, True, True, True)
 
         self.isVisible = bpyMesh.visible_get()
-        self.isPickable = not bpyMesh.hide_select
-        self.isEnabled = not bpyMesh.hide_render
+        self.isPickable = bpyMesh.data.isPickable
+        self.isEnabled = not bpyMesh.data.disabled
         self.checkCollisions = bpyMesh.data.checkCollisions
         self.receiveShadows = bpyMesh.data.receiveShadows
         self.castShadows = bpyMesh.data.castShadows
@@ -167,10 +167,10 @@ class Mesh(FCurveAnimatable):
                 Logger.warn('No materials have been assigned: ', 2)
 
         # Get mesh temporary version of mesh with modifiers applied
-        if bpyMesh.type == 'MESH':
-            depsgraph = bpy.context.evaluated_depsgraph_get()
-            mesh_owner = bpyMesh.evaluated_get(depsgraph)
-            mesh = mesh_owner.to_mesh()
+        # done based on: https://docs.blender.org/api/blender2.8/bpy.types.Depsgraph.html
+        depsgraph = bpy.context.evaluated_depsgraph_get()
+        objectWithModifiers = bpyMesh.evaluated_get(depsgraph)
+        mesh = objectWithModifiers.to_mesh()
 
         # Triangulate mesh if required
         Mesh.mesh_triangulate(mesh)
@@ -379,6 +379,7 @@ class Mesh(FCurveAnimatable):
                     indicesCount += 1
             self.subMeshes.append(SubMesh(materialIndex, subMeshVerticesStart, subMeshIndexStart, verticesCount - subMeshVerticesStart, indicesCount - subMeshIndexStart))
 
+        bpyMesh.to_mesh_clear()
         BJSMaterial.meshBakingClean(bpyMesh)
 
         Logger.log('num positions      :  ' + str(len(self.positions)), 2)
@@ -822,7 +823,6 @@ bpy.types.Mesh.tags = bpy.props.StringProperty(
     description='Add meta-data to mesh (space delimited for multiples)',
     default = ''
 )
-# not currently in use
 bpy.types.Mesh.forceBaking = bpy.props.BoolProperty(
     name='Force Baking',
     description='Combine multiple materials.  May not work well with materials\nwith alpha textures in front of other materials.',
@@ -890,6 +890,16 @@ bpy.types.Mesh.billboardMode = bpy.props.EnumProperty(
             ),
     default = BILLBOARDMODE_NONE
 )
+bpy.types.Mesh.isPickable = bpy.props.BoolProperty(
+    name='Pickable',
+    description='Disable picking for a mesh.',
+    default = True
+)
+bpy.types.Mesh.disabled = bpy.props.BoolProperty(
+    name='Disabled',
+    description='Load mesh disabled, which also disables all children.',
+    default = False
+)
 
 #===============================================================================
 class BJS_PT_MeshPanel(bpy.types.Panel):
@@ -917,6 +927,10 @@ class BJS_PT_MeshPanel(bpy.types.Panel):
         row = layout.row()
         row.prop(ob.data, 'freezeWorldMatrix')
         row.prop(ob.data, 'checkCollisions')
+
+        row = layout.row()
+        row.prop(ob.data, 'isPickable')
+        row.prop(ob.data, 'disabled')
 
         layout.prop(ob.data, 'autoAnimate')
 
