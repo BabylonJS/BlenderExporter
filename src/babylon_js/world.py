@@ -183,7 +183,7 @@ bpy.types.World.textureDir = bpy.props.StringProperty(
 bpy.types.World.usePBRMaterials = bpy.props.BoolProperty(
     name='Use PBR Materials',
     description="Export as a PBR materials, when checked",
-    default = False,
+    default = True,
 )
 bpy.types.World.environmentIntensity = bpy.props.FloatProperty(
     name='Environment Intensity',

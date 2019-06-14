@@ -1,4 +1,6 @@
-# Blender to Babylon.js exporter
+# Blender to Babylon.js exporter 
+
+## Note: This requires Blender 2.80 or greater, see deprecated for earlier versions.
 
 ## Documentation
 See the [exporters documentation](http://doc.babylonjs.com/exporters) to:

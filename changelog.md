@@ -1,5 +1,18 @@
 # Blender2Babylon add-on changelog
 
+## Blender Exporter Version 6.1.1
+* 12 May 2019*
+
+* Support for exporting to either BJS 4.0 or 4.1 regarding names of properties, which changed names
+* Make PBR materials the default
+
+## Blender Exporter Version 6.1.0
+* 11 May 2019*
+* Added support for Subsurface, Anisotropic, Clear Coat, & sheen from Principled node for PBR
+* Added tangents when also using custom split normals
+* Added several generic .env files for when PBR is output
+* Made changes reflecting the final API for Blender 2.80
+
 ## Blender Exporter Version 6.0.0
 *24 January 2019*
 

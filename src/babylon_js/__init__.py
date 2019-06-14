@@ -1,11 +1,11 @@
 bl_info = {
     'name': 'Babylon.js',
     'author': 'David Catuhe, Jeff Palmer',
-    'version': (6, 1, 0),
+    'version': (6, 1, 1),
     'blender': (2, 80, 0),
     'location': 'File > Export > Babylon.js (.babylon)',
     'description': 'Export Babylon.js scenes (.babylon)',
-    'wiki_url': 'https://github.com/BabylonJS/Babylon.js/tree/master/Exporters/Blender',
+    'wiki_url': 'https://github.com/BabylonJS/BlenderExporter',
     'tracker_url': '',
     'category': 'Babylon.JS'}
 
