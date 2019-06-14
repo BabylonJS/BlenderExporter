@@ -284,6 +284,7 @@ class BJSMaterial:
             if self.bjsNodeTree.subSurfaceTintColor is not None:
                 file_handler.write(',"subSurface":{')
                 write_bool(file_handler, '_isRefractionEnabled', True, True)
+                write_bool(file_handler, 'isRefractionEnabled', True, True)
                 write_color(file_handler, 'tintColor', self.bjsNodeTree.subSurfaceTintColor)
                 if self.bjsNodeTree.indexOfRefraction is not None:
                     write_float(file_handler, 'indexOfRefraction', self.bjsNodeTree.indexOfRefraction)
@@ -293,6 +294,7 @@ class BJSMaterial:
             if self.bjsNodeTree.anisotropicIntensity is not None:
                 file_handler.write(',"anisotropy":{')
                 write_bool(file_handler, '_isEnabled', True, True)
+                write_bool(file_handler, 'isEnabled', True, True)
                 write_float(file_handler, 'intensity', self.bjsNodeTree.anisotropicIntensity)
                 file_handler.write('}')
 
@@ -300,6 +302,7 @@ class BJSMaterial:
             if self.bjsNodeTree.sheenIntensity is not None or self.bjsNodeTree.sheenColor is not None or SHEEN_TEX in self.textures:
                 file_handler.write(',"sheen":{')
                 write_bool(file_handler, '_isEnabled', True, True)
+                write_bool(file_handler, 'isEnabled', True, True)
 
                 if SHEEN_TEX in self.textures:
                     self.textures[SHEEN_TEX[0:-1]].to_json_file(file_handler) # all but last character
@@ -313,8 +316,11 @@ class BJSMaterial:
             if self.bjsNodeTree.clearCoatIntensity is not None or self.bjsNodeTree.clearCoatRoughness is not None or CLEARCOAT_TEX in self.textures:
                 file_handler.write(',"clearCoat":{')
                 write_bool(file_handler, '_isEnabled', True, True)
+                write_bool(file_handler, 'isEnabled', True, True)
                 if self.bjsNodeTree.indexOfRefraction is not None:
+                    write_float(file_handler, '_indiceOfRefraction', self.bjsNodeTree.indexOfRefraction)
                     write_float(file_handler, '_indexOfRefraction', self.bjsNodeTree.indexOfRefraction)
+                    write_float(file_handler, 'indexOfRefraction', self.bjsNodeTree.indexOfRefraction)
 
                 if CLEARCOAT_TEX in self.textures:
                     self.textures[CLEARCOAT_TEX[0:-1]].to_json_file(file_handler) # all but last character
