@@ -278,7 +278,7 @@ class BJSMaterial:
 
             # source emissive node
             if self.bjsNodeTree.emissiveIntensity is not None:
-                write_color(file_handler, 'emissiveIntensity', self.bjsNodeTree.emissiveIntensity)
+                write_float(file_handler, 'emissiveIntensity', self.bjsNodeTree.emissiveIntensity)
 
             # source principled node
             if self.bjsNodeTree.subSurfaceTintColor is not None:
