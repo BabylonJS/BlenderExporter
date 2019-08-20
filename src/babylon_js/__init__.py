@@ -50,8 +50,8 @@ class JsonMain(bpy.types.Operator, ExportHelper):
     bl_options = {'REGISTER', 'UNDO'}
     filename_ext = '.babylon'            # used as the extension on file selector
 
-    filepath = bpy.props.StringProperty(subtype = 'FILE_PATH') # assigned once the file selector returns
-    filter_glob = bpy.props.StringProperty(name='.babylon',default='*.babylon', options={'HIDDEN'})
+    filepath: bpy.props.StringProperty(subtype = 'FILE_PATH') # assigned once the file selector returns
+    filter_glob: bpy.props.StringProperty(name='.babylon',default='*.babylon', options={'HIDDEN'})
 
     def execute(self, context):
         from .json_exporter import JsonExporter
