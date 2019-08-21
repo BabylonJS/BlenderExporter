@@ -1,7 +1,7 @@
 bl_info = {
     'name': 'Babylon.js',
     'author': 'David Catuhe, Jeff Palmer',
-    'version': (6, 1, 2),
+    'version': (6, 2, 0),
     'blender': (2, 80, 0),
     'location': 'File > Export > Babylon.js (.babylon)',
     'description': 'Export Babylon.js scenes (.babylon)',

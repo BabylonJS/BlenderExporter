@@ -6,7 +6,10 @@ from .texture import BakedTexture
 
 import bpy
 
-PBRMATERIAL_ALPHATEST = 1
+PBRMATERIAL_OPAQUE = '0'
+PBRMATERIAL_ALPHATEST = '1'
+PBRMATERIAL_ALPHABLEND = '2'
+PBRMATERIAL_ALPHATESTANDBLEND  = '3'
 
 #===============================================================================
 class MultiMaterial:
@@ -45,6 +48,8 @@ class BJSMaterial:
         self.maxSimultaneousLights = mat.maxSimultaneousLights
         self.backFaceCulling = mat.backFaceCulling
         self.use_nodes = mat.use_nodes
+        self.transparencyMode = mat.transparencyMode
+        self.alphaCutOff = mat.alphaCutOff
         self.intensityOverride = mat.intensityOverride
         self.environmentIntensity = mat.environmentIntensity if mat.intensityOverride else exporter.settings.environmentIntensity
 
@@ -103,7 +108,7 @@ class BJSMaterial:
         tileYHold = render.tile_y
         render.tile_x = bakeSize
         render.tile_y = bakeSize
-        
+
         usePassIndirectHold = render.bake.use_pass_indirect
         usePassDirectHold   = render.bake.use_pass_direct
         print('usePassDirectHold  ' + str(usePassDirectHold))
@@ -127,7 +132,6 @@ class BJSMaterial:
 
         if uv == None or recipe.isMultiMaterial:
             uv = bpyMesh.data.uv_layers.new(name='BakingUV')
-          #  uv = bpyMesh.data.uv_layers['BakingUV']
             uv.active = True
             uv.active_render = not forceBaking # want the other uv's for the source when combining
 
@@ -270,8 +274,8 @@ class BJSMaterial:
 
         # properties specific to PBR
         if self.isPBR:
-            write_int(file_handler, 'transparencyMode', PBRMATERIAL_ALPHATEST)
-            
+            write_int(file_handler, 'transparencyMode', self.transparencyMode)
+            write_float(file_handler, 'alphaCutOff', self.alphaCutOff)
             # source principle node
             if self.bjsNodeTree.metallic is not None or METAL_TEX in self.textures:
                 write_float(file_handler, 'metallic', 1.0 if METAL_TEX in self.textures else self.bjsNodeTree.metallic)
@@ -426,8 +430,23 @@ bpy.types.Material.maxSimultaneousLights = bpy.props.IntProperty(
     description='BJS property set on each material.\nSet higher for more complex lighting.\nSet lower for armatures on mobile',
     default = 4, min = 0, max = 32
 )
+bpy.types.Material.transparencyMode = bpy.props.EnumProperty(
+    name='Mode',
+    description='How the alpha of this material is to be handled.  No meaning unless exporting PBR materials.',
+    items = ((PBRMATERIAL_OPAQUE           , 'Opaque'            , 'Alpha channel is not used.'),
+             (PBRMATERIAL_ALPHATEST        , 'Alpha Test'        , 'Pixels are discarded below a certain threshold defined by the alpha cutoff value.'),
+             (PBRMATERIAL_ALPHABLEND       , 'Alpha Blend'       , 'Pixels are blended (according to the alpha mode) with\n the already drawn pixels in the current frame buffer.'),
+             (PBRMATERIAL_ALPHATESTANDBLEND, 'Alpha Test & Blend', 'Pixels are blended after being higher than the cutoff threshold.')
+            ),
+    default = PBRMATERIAL_OPAQUE
+)
+bpy.types.Material.alphaCutOff = bpy.props.FloatProperty(
+    name='Alpha Cutoff',
+    description='The threshold used for Alpha Test and Alpha Test & Blend transparency modes .\nNo meaning unless exporting PBR materials.',
+    default = 0.4, min = 0, max = 1.0
+)
 bpy.types.Material.intensityOverride = bpy.props.BoolProperty(
-    name='Override',
+    name='Override World',
     description='When checked, use the intensity here, instead of the one in World.',
     default = False
 )
@@ -457,7 +476,14 @@ class BJS_PT_MaterialsPanel(bpy.types.Panel):
                 layout.prop(material, 'maxSimultaneousLights')
 
                 box = layout.box()
-                box.label(text='Environment Intensity:')
+                box.label(text='PBR Transparency:')
+                box.prop(material, 'transparencyMode')
+                row = box.row()
+                row.enabled = material.transparencyMode == PBRMATERIAL_ALPHATEST or material.transparencyMode == PBRMATERIAL_ALPHATESTANDBLEND
+                row.prop(material, 'alphaCutOff')
+
+                box = layout.box()
+                box.label(text='PBR Environment Intensity:')
                 box.prop(material, 'intensityOverride')
                 row = box.row()
                 row.enabled = material.intensityOverride

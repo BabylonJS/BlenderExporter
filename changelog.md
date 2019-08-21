@@ -1,5 +1,13 @@
 # Blender2Babylon add-on changelog
 
+##Blender Exporter 6.2.0##
+* 21 July 2019*
+
+* bug fix for meshes with armatures
+* added lights for specific collections
+* added pbr transparency mode & alpha cut off
+* (florianfelix) removed deprecated messages from console
+
 ## Blender Exporter Version 6.1.1
 * 12 May 2019*
 

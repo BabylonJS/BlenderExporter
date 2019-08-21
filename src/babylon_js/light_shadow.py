@@ -71,6 +71,14 @@ class Light(FCurveAnimatable):
         self.intensity = min(bpyLight.data.energy / 10.0, 1.0) if self.intensityMode == AUTOMATIC_MODE else bpyLight.data.energy
         self.diffuse   = bpyLight.data.color
         self.specular  = bpyLight.data.color * bpyLight.data.specular_factor
+
+       # inclusion section (lights run last, so all meshes already processed)
+        if bpyLight.data.useOwnCollection:
+            lightCollection = bpyLight.users_collection[0].name
+            self.includedOnlyMeshesIds = []
+            for mesh in exporter.meshesAndNodes:
+                if mesh.collectionName == lightCollection:
+                    self.includedOnlyMeshesIds.append(mesh.name)
 # - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - -
     @staticmethod
     def get_direction(matrix):
@@ -96,17 +104,17 @@ class Light(FCurveAnimatable):
         write_color(file_handler, 'specular', self.specular)
         write_float(file_handler, 'radius', self.radius)
 
-#        if hasattr(self, 'includedOnlyMeshesIds'):
-#            file_handler.write(',"includedOnlyMeshesIds":[')
-#            first = True
-#            for meshId in self.includedOnlyMeshesIds:
-#                if first != True:
-#                    file_handler.write(',')
-#                first = False
+        if hasattr(self, 'includedOnlyMeshesIds'):
+            file_handler.write(',"includedOnlyMeshesIds":[')
+            first = True
+            for meshId in self.includedOnlyMeshesIds:
+                if first != True:
+                    file_handler.write(',')
+                first = False
 
-#                file_handler.write('"' + meshId + '"')
+                file_handler.write('"' + meshId + '"')
 
-#            file_handler.write(']')
+            file_handler.write(']')
 
         super().to_json_file(file_handler) # Animations
         file_handler.write('}')
@@ -165,6 +173,12 @@ class ShadowGenerator:
 bpy.types.Light.autoAnimate = bpy.props.BoolProperty(
     name='Auto launch animations',
     description='',
+    default = False
+)
+
+bpy.types.Light.useOwnCollection = bpy.props.BoolProperty(
+    name='This collection Only',
+    description='Restrict this light to only shining on meshes also in this collection',
     default = False
 )
 
@@ -237,6 +251,7 @@ class BJS_PT_LightPanel(bpy.types.Panel):
         ob = context.object
         layout = self.layout
         layout.prop(ob.data, 'pbrIntensityMode')
+        layout.prop(ob.data, 'useOwnCollection')
         layout.prop(ob.data, 'shadowMap')
 
         usingShadows =  ob.data.shadowMap != NO_SHADOWS

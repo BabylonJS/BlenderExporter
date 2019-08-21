@@ -39,6 +39,7 @@ class Mesh(FCurveAnimatable):
     def __init__(self, bpyMesh, scene, exporter):
         self.scene = scene
         self.name = bpyMesh.name
+        self.collectionName = bpyMesh.users_collection[0].name # used by lights, not exported
         Logger.log('processing begun of mesh:  ' + self.name)
         self.define_animations(bpyMesh, True, True, True)
 
@@ -209,7 +210,7 @@ class Mesh(FCurveAnimatable):
         if bpyMesh.data.shape_keys:
             for block in bpyMesh.data.shape_keys.key_blocks:
                 if (block.name == 'Basis'):
-                    hasShapeKeys = True
+                    hasShapeKeys = len(bpyMesh.data.shape_keys.key_blocks) > 1
                     keyOrderMap = []
                     basis = block
                     break
@@ -257,16 +258,16 @@ class Mesh(FCurveAnimatable):
                     loop_index = tri.loops[v] # used for uv's & vertex colors
 
                     vertex = mesh.vertices[vertex_index]
-                    position = vertex.co
+                    position = vertex.co.copy()
 
                     if mesh.has_custom_normals:
                         split_normal = tri.split_normals[v]
                         normal = Vector(split_normal)                        
                         tangent = Vector(mesh.loops[loop_index].tangent)
                     elif tri.use_smooth:
-                        normal = vertex.normal
+                        normal = vertex.normal.copy()
                     else:
-                        normal = tri.normal
+                        normal = tri.normal.copy()
 
                     #skeletons
                     if self.hasSkeleton:
@@ -592,6 +593,7 @@ class Mesh(FCurveAnimatable):
         return compressedIndices
 # - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - -
     def to_json_file(self, file_handler):
+        Logger.log('writing mesh:  ' +  self.name, 1)
         file_handler.write('{')
         write_string(file_handler, 'name', self.name, True)
         write_string(file_handler, 'id', self.name)
