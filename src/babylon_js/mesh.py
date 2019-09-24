@@ -262,8 +262,9 @@ class Mesh(FCurveAnimatable):
 
                     if mesh.has_custom_normals:
                         split_normal = tri.split_normals[v]
-                        normal = Vector(split_normal)                        
-                        tangent = Vector(mesh.loops[loop_index].tangent)
+                        normal = Vector(split_normal)
+                        t = mesh.loops[loop_index].tangent
+                        tangent = [t.x, t.z, t.y, mesh.loops[loop_index].bitangent_sign]
                     elif tri.use_smooth:
                         normal = vertex.normal.copy()
                     else:
@@ -309,7 +310,7 @@ class Mesh(FCurveAnimatable):
 
                             if mesh.has_custom_normals:
                                 vTangent = vertices_Tangents[vertex_index][index_UV]
-                                if not same_vertex(tangent, vTangent, world.normalsPrecision):
+                                if not same_array(tangent, vTangent, world.normalsPrecision):
                                     continue;
 
                             if hasUV:
@@ -352,7 +353,10 @@ class Mesh(FCurveAnimatable):
 
                         if mesh.has_custom_normals:
                             vertices_Tangents[vertex_index].append(tangent)
-                            self.tangents.append(tangent)
+                            self.tangents.append(tangent[0])
+                            self.tangents.append(tangent[1])
+                            self.tangents.append(tangent[2])
+                            self.tangents.append(tangent[3])
 
                         if hasUV:
                             vertices_UVs[vertex_index].append(vertex_UV)
@@ -633,8 +637,8 @@ class Mesh(FCurveAnimatable):
         write_vector_array(file_handler, 'normals'  , self.normals, world.normalsPrecision)
 
         if len(self.tangents) > 0:
-            write_vector_array(file_handler, 'tangents'  , self.tangents, world.normalsPrecision)
-            
+            write_array(file_handler, 'tangents'  , self.tangents, world.normalsPrecision)
+
         if len(self.uvs) > 0:
             write_array(file_handler, 'uvs', self.uvs, world.UVsPrecision)
 

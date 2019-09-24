@@ -1,6 +1,13 @@
 # Blender2Babylon add-on changelog
 
-##Blender Exporter 6.2.0##
+## Blender 6.2.1 ##
+* 24 September 2019*
+
+* added direction onto tangents when doing split normals
+* changed only exporting currently assigned animation to be the default
+* fixed Glossy node from erroring when an unsupported node is assigned as input to Roughness
+
+## Blender Exporter 6.2.0 ##
 * 21 July 2019*
 
 * bug fix for meshes with armatures

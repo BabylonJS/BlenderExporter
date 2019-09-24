@@ -211,7 +211,7 @@ bpy.types.World.loopSound = bpy.props.BoolProperty(
 bpy.types.World.currentActionOnly = bpy.props.BoolProperty(
     name='Only Currently Assigned Actions',
     description="When true, only the currently assigned action is exported.",
-    default = False,
+    default = True,
 )
 bpy.types.World.autoAnimate = bpy.props.BoolProperty(
     name='Auto launch non-skeleton animations',
