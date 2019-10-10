@@ -42,6 +42,7 @@ class AbstractBJSNode:
         # scalar bubbled up channel values for Pbr Material
         self.metallic = None
         self.indexOfRefraction = None
+        self.subsurfaceTranslucencyIntensity = None
         self.subSurfaceTintColor = None
         self.anisotropicIntensity = None
         self.sheenIntensity = None
@@ -106,7 +107,7 @@ class AbstractBJSNode:
         self.mustBakeRoughness  |= bjsWrapperNode.mustBakeRoughness
         self.mustBakeSheen      |= bjsWrapperNode.mustBakeSheen
         self.mustBakeClearCoat  |= bjsWrapperNode.mustBakeClearCoat
-        self.mustBakeRefraction |= bjsWrapperNode.mustBakeRefraction     
+        self.mustBakeRefraction |= bjsWrapperNode.mustBakeRefraction
 
         # bubble up any scalars (defaults) which may have been set, allow multiples for principled.
         if bjsWrapperNode.diffuseColor is not None:
@@ -125,6 +126,9 @@ class AbstractBJSNode:
 
         if bjsWrapperNode.specularColor is not None:
             self.specularColor = bjsWrapperNode.specularColor
+
+        if bjsWrapperNode.subsurfaceTranslucencyIntensity is not None:
+            self.subsurfaceTranslucencyIntensity = bjsWrapperNode.subsurfaceTranslucencyIntensity
 
         if bjsWrapperNode.subSurfaceTintColor is not None:
             self.subSurfaceTintColor = bjsWrapperNode.subSurfaceTintColor

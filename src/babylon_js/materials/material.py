@@ -285,10 +285,11 @@ class BJSMaterial:
                 write_float(file_handler, 'emissiveIntensity', self.bjsNodeTree.emissiveIntensity)
 
             # source principled node
-            if self.bjsNodeTree.subSurfaceTintColor is not None:
+            if self.bjsNodeTree.subsurfaceTranslucencyIntensity is not None:
                 file_handler.write(',"subSurface":{')
-                write_bool(file_handler, 'isRefractionEnabled', True, True)
-                write_bool(file_handler, '_isRefractionEnabled', True, False) # for BJS 4.0, delete eventually
+                write_bool(file_handler, 'isTranslucencyEnabled', True, True)
+                write_bool(file_handler, '_isTranslucencyEnabled', True, False) # for BJS 4.0, delete eventually
+                write_float(file_handler, 'translucencyIntensity', self.bjsNodeTree.subsurfaceTranslucencyIntensity)
                 write_color(file_handler, 'tintColor', self.bjsNodeTree.subSurfaceTintColor)
                 if self.bjsNodeTree.indexOfRefraction is not None:
                     write_float(file_handler, 'indexOfRefraction', self.bjsNodeTree.indexOfRefraction)

@@ -2,7 +2,6 @@ from .abstract import *
 from babylon_js.package_level import *
 
 from mathutils import Color
-DEFAULT_SURFACE_TINT = Color((0.7, 0.1, 0.1))
 
 #===============================================================================
 class PrincipledBJSNode(AbstractBJSNode):
@@ -19,15 +18,15 @@ class PrincipledBJSNode(AbstractBJSNode):
 
         self.mustBakeDiffuse = input.mustBake if isinstance(input, AbstractBJSNode) else False
         # - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - -
-        input = self.findInput('Subsurface')
+        subsurface = self.findInput('Subsurface')
         # ignoring texture surfaces & must be greater than 0
-        if (not isinstance(input, AbstractBJSNode) and input > 0):
+        if (not isinstance(subsurface, AbstractBJSNode) and subsurface > 0):
             input = self.findInput('Subsurface Color')
-            # ignoring texture surfaces & must not be the default red to detect it is wanted
+            # ignoring texture surfaces
             if (not isinstance(input, AbstractBJSNode)):
-                subSurface = Color((input[0], input[1], input[2]))
-                if not same_color(subSurface, DEFAULT_SURFACE_TINT):
-                    self.subSurfaceTintColor = subSurface
+                tintColor = Color((input[0], input[1], input[2]))
+                self.subSurfaceTintColor = tintColor
+                self.subsurfaceTranslucencyIntensity = subsurface
         # - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - -
         input = self.findInput('Metallic')
         defaultMetallic = self.findTexture(input, METAL_TEX)
@@ -53,11 +52,11 @@ class PrincipledBJSNode(AbstractBJSNode):
         input = self.findInput('Clearcoat')
         defaultClearCoatIntensity = self.findTexture(input, CLEARCOAT_TEX)
         self.mustBakeClearCoat = input.mustBake if isinstance(input, AbstractBJSNode) else False
-        
+
         input = self.findInput('Clearcoat Roughness')
         defaultClearCoatRoughness = self.findTexture(input, CLEARCOAT_TEX)
         self.mustBakeClearCoat = input.mustBake if isinstance(input, AbstractBJSNode) else False
-        
+
         # only want scalars, when no texture on either input & intensity > 0
         if CLEARCOAT_TEX not in self.bjsTextures and defaultClearCoatIntensity is not None and defaultClearCoatIntensity > 0:
             self.clearCoatIntensity = defaultClearCoatIntensity
@@ -66,11 +65,11 @@ class PrincipledBJSNode(AbstractBJSNode):
         input = self.findInput('Sheen')
         defaultSheenIntensity = self.findTexture(input, SHEEN_TEX)
         self.mustBakeSheen = input.mustBake if isinstance(input, AbstractBJSNode) else False
-        
+
         input = self.findInput('Sheen Tint')
         defaultSheenColor = self.findTexture(input, SHEEN_TEX)
         self.mustBakeSheen = input.mustBake if isinstance(input, AbstractBJSNode) else False
-        
+
         # only want scalars, when no texture on either input & intensity > 0
         if SHEEN_TEX not in self.bjsTextures and defaultSheenIntensity is not None and defaultSheenIntensity > 0:
             self.sheenIntensity = defaultSheenIntensity
