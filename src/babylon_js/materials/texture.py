@@ -88,7 +88,7 @@ class Texture:
             elif bpyMesh.data.uv_layers[1].name == self.uvMapName:
                 self.coordinatesIndex = 1
             else:
-                logging.Logger.warn('Texture is not mapped as UV or UV2, assigned 1', 5)
+                Logger.warn('Texture is not mapped as UV or UV2, assigned 1', 5)
                 self.coordinatesIndex = 0
 # - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - -
     def to_json_file(self, file_handler):

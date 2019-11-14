@@ -396,6 +396,7 @@ class BJSMaterial:
                 write_bool(file_handler, 'useMetallnessFromMetallicTextureBlue', METAL_TEX in self.textures)
                 write_bool(file_handler, 'useRoughnessFromMetallicTextureGreen', ROUGHNESS_TEX in self.textures)
                 write_bool(file_handler, 'useAmbientOcclusionFromMetallicTextureRed', AMBIENT_TEX in self.textures)
+                write_bool(file_handler, 'useRoughnessFromMetallicTextureAlpha', False)
 
         else:
             if METAL_TEX in self.textures or ROUGHNESS_TEX in self.textures:
