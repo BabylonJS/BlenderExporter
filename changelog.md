@@ -1,5 +1,11 @@
 # Blender2Babylon add-on changelog
 
+## Blender 6.2.4 ##
+* 05 January 2020*
+
+* Fixed material when not using Nodes
+* Changed how Location, Rotation, & Scale are implemented for Blender 2.81.  Inputs can now be other nodes.  Still works for Blender 2.80, but the as other inputs part.
+
 ## Blender 6.2.1 ##
 * 24 September 2019*
 

@@ -226,10 +226,10 @@ class BJSMaterial:
         if self.isPBR: write_float(file_handler, 'environmentIntensity', self.environmentIntensity)
 
         if not self.use_nodes:
-            propName = 'albedoColor' if self.isPBR else 'diffuseColor'
+            propName = 'albedo' if self.isPBR else 'diffuse'
             write_color(file_handler, propName, self.diffuseColor)
 
-            propName = 'reflectivityColor' if self.isPBR else 'specularColor'
+            propName = 'reflectivity' if self.isPBR else 'specular'
             write_color(file_handler, propName, self.specularColor)
 
             if self.isPBR:
