@@ -32,6 +32,7 @@ class World:
 
         self.gravity = scene.gravity
         self.writeManifestFile = world.writeManifestFile
+        self.preserveZUpRight = world.preserveZUpRight
 
         self.fogMode = int(world.fogMode)
         if self.fogMode > 0:
@@ -230,6 +231,13 @@ bpy.types.World.writeManifestFile = bpy.props.BoolProperty(
     description="Automatically create or update [filename].babylon.manifest for this file",
     default = True,
 )
+
+###    Preserve Z-up and right-handed coordinate     ###
+bpy.types.World.preserveZUpRight = bpy.props.BoolProperty(
+    name='Preserve Z-up right-handed coordinate (EXPERIMENTAL)',
+    description="By default, Y and Z are flipped by the exporter. This setting prevent that",
+    default = False,
+)
 #===============================================================================
 class BJS_PT_WorldPanel(bpy.types.Panel):
     bl_label = get_title()
@@ -298,3 +306,5 @@ class BJS_PT_WorldPanel(bpy.types.Panel):
         box.prop(world, 'ignoreIKBones')
 
         layout.prop(world, 'writeManifestFile')
+        layout.prop(world, 'preserveZUpRight')
+

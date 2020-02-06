@@ -656,7 +656,7 @@ class Mesh(FCurveAnimatable):
             write_array(file_handler, 'matricesWeightsExtra', self.skeletonWeightsExtra, world.mWeightsPrecision)
             write_array(file_handler, 'matricesIndicesExtra', self.skeletonIndicesExtra)
 
-        write_array(file_handler, 'indices', self.indices)
+        write_indice_array(file_handler, 'indices', self.indices)
 
         # Constraint
         if hasattr(self, 'lockedTargetId'):

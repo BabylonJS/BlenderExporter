@@ -2,6 +2,7 @@ from sys import modules
 from math import floor
 from mathutils import Euler, Matrix
 
+import bpy
 from bpy import app
 from time import strftime
 FLOAT_PRECISION_DEFAULT = 4
@@ -153,6 +154,39 @@ def format_array(array, precision, indent = '', beginIdx = 0, firstNotIncludedId
 
     return ret
 # - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - -
+def format_indice_array(array, precision, indent = '', beginIdx = 0, firstNotIncludedIdx = -1):
+    ret = ''
+    first = True
+    nOnLine = 0
+
+    fmt = '%.' + str(precision) + 'f'
+    endIdx = len(array) if firstNotIncludedIdx == -1 else firstNotIncludedIdx
+    for idx in range(beginIdx, endIdx, 3):
+        if (first != True):
+            ret +=','
+        first = False;
+
+        if bpy.context.scene.world.preserveZUpRight == True :
+            ret += format_float(array[idx + 2], fmt)
+            ret +=','
+            ret += format_float(array[idx + 1], fmt)
+            ret +=','
+            ret += format_float(array[idx    ], fmt)
+        else :
+            ret += format_float(array[idx    ], fmt)
+            ret +=','
+            ret += format_float(array[idx + 1], fmt)
+            ret +=','
+            ret += format_float(array[idx + 2], fmt)
+
+        nOnLine += 3
+
+        if nOnLine >= VERTEX_OUTPUT_PER_LINE:
+            ret += '\n' + indent
+            nOnLine = 0
+
+    return ret
+# - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - -
 def format_color(color, precision = FLOAT_PRECISION_DEFAULT):
     fmt = '%.' + str(precision) + 'f'
     # reference by [], since converted materials to 2.80 cannot be addressed by .r, .g, or .b
@@ -160,7 +194,10 @@ def format_color(color, precision = FLOAT_PRECISION_DEFAULT):
 # - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - -
 def format_vector(vector, precision = FLOAT_PRECISION_DEFAULT):
     fmt = '%.' + str(precision) + 'f'
-    return format_float(vector.x, fmt) + ',' + format_float(vector.z, fmt) + ',' + format_float(vector.y, fmt)
+    if bpy.context.scene.world.preserveZUpRight == True :
+        return format_float(vector.x, fmt) + ',' + format_float(vector.y, fmt) + ',' + format_float(vector.z, fmt)
+    else :
+        return format_float(vector.x, fmt) + ',' + format_float(vector.z, fmt) + ',' + format_float(vector.y, fmt)
 # - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - -
 def format_vector_array(vectorArray, precision = FLOAT_PRECISION_DEFAULT, indent = ''):
     ret = ''
@@ -182,7 +219,10 @@ def format_vector_array(vectorArray, precision = FLOAT_PRECISION_DEFAULT, indent
 # - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - -
 def format_quaternion(quaternion, precision = FLOAT_PRECISION_DEFAULT):
     fmt = '%.' + str(precision) + 'f'
-    return format_float(quaternion.x, fmt) + ',' + format_float(quaternion.z, fmt) + ',' + format_float(quaternion.y, fmt) + ',' + format_float(-quaternion.w, fmt)
+    if bpy.context.scene.world.preserveZUpRight == True :
+        return format_float(quaternion.x, fmt) + ',' + format_float(quaternion.y, fmt) + ',' + format_float(quaternion.z, fmt) + ',' + format_float(quaternion.w, fmt)
+    else :
+        return format_float(quaternion.x, fmt) + ',' + format_float(quaternion.z, fmt) + ',' + format_float(quaternion.y, fmt) + ',' + format_float(-quaternion.w, fmt)
 # - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - -
 def format_int(int):
     candidate = str(int) # when int string of an int
@@ -271,6 +311,9 @@ def write_matrix4(file_handler, name, matrix, precision = FLOAT_PRECISION_DEFAUL
 
 def write_array(file_handler, name, array, precision = FLOAT_PRECISION_DEFAULT):
     file_handler.write('\n,"' + name + '":[' + format_array(array, precision) + ']')
+
+def write_indice_array(file_handler, name, array, precision = FLOAT_PRECISION_DEFAULT):
+    file_handler.write('\n,"' + name + '":[' + format_indice_array(array, precision) + ']')
 
 def write_array3(file_handler, name, array, precision = FLOAT_PRECISION_DEFAULT):
     file_handler.write(',"' + name + '":[' + format_array3(array, precision) + ']')
