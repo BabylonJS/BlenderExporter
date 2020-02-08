@@ -60,15 +60,16 @@ class JsonExporter:
 
             Logger.log('========= Conversion from Blender to Babylon.js =========', 0)
             Logger.log('Scene settings used :', 1)
-            Logger.log('inline textures     :  ' + format_bool(self.inlineTextures), 2)
+            Logger.log('Inline textures     :  ' + format_bool(self.inlineTextures), 2)
             Logger.log('Material Type       :  ' + ('PBR' if self.settings.usePBRMaterials else 'STD'), 2)
             Logger.log('Positions Precision :  ' + format_int(self.settings.positionsPrecision), 2)
             Logger.log('Normals Precision   :  ' + format_int(self.settings.normalsPrecision), 2)
             Logger.log('UVs Precision       :  ' + format_int(self.settings.UVsPrecision), 2)
             Logger.log('Vert Color Precision:  ' + format_int(self.settings.vColorsPrecision), 2)
             Logger.log('Mat Weight Precision:  ' + format_int(self.settings.mWeightsPrecision), 2)
+            Logger.log('Keep Z-up r-handed  :  ' + ( 'yes' if self.settings.preserveZUpRight else 'no' ), 2)
             if not self.inlineTextures:
-                Logger.log('texture directory   :  ' + self.textureFullPathDir, 2)
+                Logger.log('Texture directory   :  ' + self.textureFullPathDir, 2)
             self.world = World(scene, self)
 
             bpy.ops.screen.animation_cancel()

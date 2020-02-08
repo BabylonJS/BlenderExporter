@@ -1,6 +1,7 @@
-var zipFolder = require('zip-folder');
- 
-zipFolder('src', './Blender2Babylon-6.2.zip', function(err) {
+const zipFolder = require('zip-folder');
+const package_ = require('./package.json');
+
+zipFolder('src', './Blender2Babylon-' + package_.version.replace( /\.[0-9]+$/ , '' ) + '.zip', function(err) {
     if(err) {
         console.log('oh no!', err);
     } else {

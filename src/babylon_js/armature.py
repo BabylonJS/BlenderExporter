@@ -48,7 +48,10 @@ class Bone:
 # - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - -
     @staticmethod
     def get_matrix(bpyBone, matrix_world):
-        SystemMatrix = Matrix.Scale(-1, 4, Vector((0, 0, 1))) @ Matrix.Rotation(radians(-90), 4, 'X')
+        if bpy.context.scene.world.preserveZUpRight == True :
+            SystemMatrix = Matrix.Scale(1, 4, Vector((0, 0, 1)))
+        else :
+            SystemMatrix = Matrix.Scale(-1, 4, Vector((0, 0, 1))) @ Matrix.Rotation(radians(-90), 4, 'X')
 
         if bpyBone.parent:
             return (SystemMatrix @ matrix_world @ bpyBone.parent.matrix).inverted() @ (SystemMatrix @ matrix_world @ bpyBone.matrix)
