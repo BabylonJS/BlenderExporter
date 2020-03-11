@@ -77,7 +77,8 @@ class Light(FCurveAnimatable):
             lightCollection = bpyLight.users_collection[0].name
             self.includedOnlyMeshesIds = []
             for mesh in exporter.meshesAndNodes:
-                if mesh.collectionName == lightCollection:
+                # nodes do not have a collectionName recorded, so hasattr eliminates them
+                if hasattr(mesh, 'collectionName') and mesh.collectionName == lightCollection:
                     self.includedOnlyMeshesIds.append(mesh.name)
 # - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - -
     @staticmethod

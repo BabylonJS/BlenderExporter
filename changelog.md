@@ -1,5 +1,15 @@
 # Blender2Babylon add-on changelog
 
+## Blender 6.3.1 ##
+* 11 March 2020*
+
+* Fixed 'This collection Only' option for lights, when empties are also in the scene.
+
+## Blender 6.3.0 ##
+* 10 Feburary 2020*
+
+* Add the option 'preserve Z-up and right-handed' in the world tab.
+
 ## Blender 6.2.4 ##
 * 05 January 2020*
 
