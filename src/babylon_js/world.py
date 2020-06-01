@@ -32,6 +32,7 @@ class World:
 
         self.gravity = scene.gravity
         self.writeManifestFile = world.writeManifestFile
+        self.writeCsvFile = world.writeCsvFile
         self.preserveZUpRight = world.preserveZUpRight
 
         self.fogMode = int(world.fogMode)
@@ -225,6 +226,12 @@ bpy.types.World.ignoreIKBones = bpy.props.BoolProperty(
     default = False,
 )
 
+bpy.types.World.writeCsvFile = bpy.props.BoolProperty(
+    name='Write .csv file',
+    description="Write mesh statistics into a spreadsheet file for analysis",
+    default = False,
+)
+
 ###    JSON Specific     ###
 bpy.types.World.writeManifestFile = bpy.props.BoolProperty(
     name='Write .manifest file',
@@ -304,6 +311,8 @@ class BJS_PT_WorldPanel(bpy.types.Panel):
         box.prop(world, 'currentActionOnly')
         box.prop(world, 'autoAnimate')
         box.prop(world, 'ignoreIKBones')
+
+        layout.prop(world, 'writeCsvFile')
 
         layout.prop(world, 'writeManifestFile')
         layout.prop(world, 'preserveZUpRight')

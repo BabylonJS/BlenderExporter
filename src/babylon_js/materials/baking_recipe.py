@@ -38,6 +38,7 @@ class BakingRecipe:
         for material_slot in bpyMesh.material_slots:
             # a material slot is not a reference to an actual material; need to look up
             bpyMaterial = material_slot.material
+            if bpyMaterial is None: continue
 
             bjsMaterial = BJSMaterial(bpyMaterial, exporter)
             self.bjsMaterials.append(bjsMaterial)
@@ -45,8 +46,6 @@ class BakingRecipe:
             if bpyMaterial.use_nodes == True:
                 if firstMatUsingNodes is None:
                     firstMatUsingNodes = bjsMaterial
-                    if self.isMultiMaterial:
-                        firstMatUsingNodes.name = bpyMesh.name + '_baked'
 
                 self.node_trees.append(bpyMaterial.node_tree)
 
@@ -97,6 +96,7 @@ class BakingRecipe:
                 Logger.warn('Refraction channel baking required, but not possible, ignored', 3)
 
             # when baking let the values of any custom properties come from the first node material
+            firstMatUsingNodes.name = bpyMesh.name + '_baked'
             self.bakedMaterial = BJSMaterial(firstMatUsingNodes, exporter)
             if not self.isMultiMaterial:
                 # there may be other image textures, which could be transferred when not multi material

@@ -44,6 +44,9 @@ class JsonExporter:
             JsonExporter.nameSpace = getNameSpace(self.filepathMinusExtension)
 
             log = Logger(self.filepathMinusExtension + '.log')
+            if self.settings.writeCsvFile:
+                stats_handler = open(self.filepathMinusExtension + '-stats.csv', 'w', encoding='utf8')
+                Mesh.GetStatsColumns(stats_handler)
 
             if bpy.ops.object.mode_set.poll():
                 bpy.ops.object.mode_set(mode = 'OBJECT')
@@ -123,6 +126,8 @@ class JsonExporter:
 
                     if hasattr(mesh, 'instances'):
                         self.meshesAndNodes.append(mesh)
+                        if self.settings.writeCsvFile:
+                                mesh.getMeshStats(stats_handler)
                         if hasattr(mesh, 'morphTargetManagerId'):
                             self.morphTargetMngrs.append(mesh)
 
@@ -162,6 +167,7 @@ class JsonExporter:
 
         finally:
             log.close()
+            if self.settings.writeCsvFile: stats_handler.close()
 
         self.nWarnings = log.nWarnings
         self.nErrors = log.nErrors

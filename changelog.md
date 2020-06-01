@@ -1,5 +1,13 @@
 # Blender2Babylon add-on changelog
 
+## Blender 6.4.0 ##
+* 01 June 2020*
+
+* Fixed exception when an empty material slot, just ignored now.
+* Fixed non-sharing of materials when part of a multi-material.
+* Added optional .csv file for mesh exporting statistics (turned on in World properties).
+* Changed logging of the # of indexes to the more meaningful # of triangle exported.
+
 ## Blender 6.3.1 ##
 * 11 March 2020*
 

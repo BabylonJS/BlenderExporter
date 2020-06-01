@@ -406,7 +406,7 @@ class Mesh(FCurveAnimatable):
         Logger.log('num uvs            :  ' + str(len(self.uvs      )), 2)
         Logger.log('num uvs2           :  ' + str(len(self.uvs2     )), 2)
         Logger.log('num colors         :  ' + str(len(self.colors   )), 2)
-        Logger.log('num indices        :  ' + str(len(self.indices  )), 2)
+        Logger.log('num triangles      :  ' + str(math.trunc(len(self.indices  ) / 3)), 2)
 
         if self.hasSkeleton:
             Logger.log('Skeleton stats:  ', 2)
@@ -473,6 +473,24 @@ class Mesh(FCurveAnimatable):
                 basis = RawShapeKey(basis, None, 'BASIS', keyOrderMap, basis, world.positionsPrecision)
                 for group in groupNames:
                     self.shapeKeyGroups.append(ShapeKeyGroup(group,self.rawShapeKeys, basis.vertices, world.positionsPrecision))
+# - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - -
+    @staticmethod
+    def GetStatsColumns(file_handler):
+        file_handler.write('Mesh, positions, normals, tangents, uvs, uvs2, colors, triangles, Skel Weights\n')
+
+    def getMeshStats(self, file_handler):
+        file_handler.write('"' + self.name + '", ' +
+                                 str(len(self.positions)) + ', ' +
+                                 str(len(self.normals)) + ', ' +
+                                 str(len(self.tangents)) + ', ' +
+                                 str(len(self.uvs)) + ', ' +
+                                 str(len(self.uvs2)) + ', ' +
+                                 str(len(self.colors)) + ', ' +
+                                 str(math.trunc(len(self.indices) / 3)) )
+        if self.hasSkeleton:
+            file_handler.write(', ' + str(len(self.skeletonWeights) + (len(self.skeletonWeightsExtra) if hasattr(self, 'skeletonWeightsExtra') else 0)) )
+
+        file_handler.write('\n')
 # - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - -
     def find_zero_area_faces(self):
         nFaces = int(len(self.indices) / 3)
