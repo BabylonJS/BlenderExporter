@@ -1,5 +1,10 @@
 # Blender2Babylon add-on changelog
 
+## Blender 6.4.1 ##
+* 09 June 2020*
+
+* Changed with how Blender 2.83.0 now reports versions.  Exporter now works both ways.
+
 ## Blender 6.4.0 ##
 * 01 June 2020*
 

@@ -26,33 +26,30 @@ def format_exporter_version(bl_info = None):
     else:
         return str(exporterVersion[0]) + '.' + str(exporterVersion[1]) +  '-beta ' + str(abs(exporterVersion[2]) - 1)
 # - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - -
-def blenderMajorMinorVersion():
-    # in form of '2.77 (sub 0)'
-    split1 = app.version_string.partition('.')
-    major = split1[0]
-
-    split2 = split1[2].partition(' ')
-    minor = split2[0]
-
-    return float(major + '.' + minor)
-# - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - -
 def verify_min_blender_version():
+    # required version string in addon changed format in 2.83
     reqd = get_bl_info()['blender']
 
-    # in form of '2.77 (sub 0)'
-    split1 = app.version_string.partition('.')
-    major = int(split1[0])
-    if reqd[0] > major: return False
+    if bpy.app.version < (2, 83, 0):
+        # reqd in form of '2.77 (sub 0)'
+        split1 = bpy.app.version_string.partition('.')
+        major = int(split1[0])
+        if reqd[0] > major: return False
 
-    split2 = split1[2].partition(' ')
-    minor = int(split2[0])
-    if reqd[1] > minor: return False
+        split2 = split1[2].partition(' ')
+        minor = int(split2[0])
+        if reqd[1] > minor: return False
 
-    split3 = split2[2].partition(' ')
-    revision = int(split3[2][:1])
-    if reqd[2] > revision: return False
+        split3 = split2[2].partition(' ')
+        revision = int(split3[2][:1])
+        if reqd[2] > revision: return False
 
-    return True
+        return True
+
+    else:
+        # reqd in form of '(2, 80, 0)'
+        return bpy.app.version >= reqd
+
 # - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - -
 def getNameSpace(filepathMinusExtension):
     # assign nameSpace, based on OS
