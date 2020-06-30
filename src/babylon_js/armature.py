@@ -92,6 +92,8 @@ class Skeleton:
         for bone in self.bones:
             bone.assignParentIndex(self.bones)
 
+        original_action = bpySkeleton.animation_data.action
+
         if (bpySkeleton.animation_data):
             self.ranges = []
             frameOffset = 0
@@ -114,6 +116,7 @@ class Skeleton:
 
                 frameOffset = animationRange.frame_end
 
+        bpySkeleton.animation_data.action = original_action
         # mode_set's only work when there is an active object, switch bones to edit mode to rest position
         context.view_layer.objects.active = bpySkeleton
         bpy.ops.object.mode_set(mode='EDIT')
