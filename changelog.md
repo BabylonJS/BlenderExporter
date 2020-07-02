@@ -1,5 +1,10 @@
 # Blender2Babylon add-on changelog
 
+## Blender 6.4.2 ##
+* 02 July 2020*
+
+* The original animation assigned to an armature is return once animation has completed, by https://github.com/ghempton, see PR https://github.com/BabylonJS/BlenderExporter/pull/25.
+
 ## Blender 6.4.1 ##
 * 09 June 2020*
 
