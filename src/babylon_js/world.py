@@ -57,8 +57,8 @@ class World:
                     worldNode = AbstractBJSNode.readWorldNodeTree(world.node_tree)
                     if worldNode is not None and ENVIRON_TEX in worldNode.bjsTextures:
                         bjsTexture = worldNode.bjsTextures[ENVIRON_TEX]
+                        bjsTexture.process(exporter, False) # An environment texture cannot be base64
                         self.envFileNoPath = bjsTexture.fileNoPath
-                        bjsTexture.process(exporter.textureFullPathDir, False) # An environment texture cannot be base64
                         self.envExported = True
             else:
                 self.envFileNoPath = self.envTexture

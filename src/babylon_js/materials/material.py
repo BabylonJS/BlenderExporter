@@ -38,6 +38,7 @@ class BJSMaterial:
     def __init__(self, mat, exporter):
         # initialize; appended to either in processImageTextures() or bakeChannel()
         self.textures = {}
+        self.exporter = exporter # keep for later reference
 
         self.isPBR = exporter.settings.usePBRMaterials
         self.textureFullPathDir = exporter.textureFullPathDir
@@ -75,7 +76,7 @@ class BJSMaterial:
 
         for texType, tex in self.bjsNodeTree.bjsTextures.items():
             self.textures[texType] = tex
-            tex.process(self, True, bpyMesh)
+            tex.process(self.exporter, True, bpyMesh)
 
         return len(self.textures.items()) > 0
 # - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - -
@@ -211,7 +212,7 @@ class BJSMaterial:
         for tree in node_trees:
             tree.nodes.remove(tree.nodes.active)
 
-        self.textures[bjs_type] = BakedTexture(bjs_type, self, bpyMesh)
+        self.textures[bjs_type] = BakedTexture(bjs_type, self, bpyMesh, self.exporter)
 # - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - -
     def to_json_file(self, file_handler):
         file_handler.write('{')

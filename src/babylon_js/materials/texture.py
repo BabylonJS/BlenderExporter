@@ -29,8 +29,7 @@ NON_ALPHA_FORMATS = {'BMP', 'JPEG'}
 class Texture:
     # called in constructor for BakeTexture, but for BJSImageTexture, called in Mesh, after ruling out will be baked
     # An environment texture cannot be base64, & does not supply a mesh argument
-    def process(self, material, canBeBase64 = True, bpyMesh = None):
-
+    def process(self, exporter, canBeBase64 = True, bpyMesh = None):
         settings = bpy.context.scene.world
         inlineTextures = canBeBase64 and settings.inlineTextures
 
@@ -48,19 +47,21 @@ class Texture:
             # when coming from either a packed image or a baked image, then save_render
             if self.isInternalImage:
                 if inlineTextures:
-                    textureFile = path.join(material.textureFullPathDir, self.fileNoPath + 'temp')
+                    textureFile = path.join(exporter.textureFullPathDir, self.fileNoPath + 'temp')
                 else:
-                    textureFile = path.join(material.textureFullPathDir, self.fileNoPath)
+                    textureFile = path.join(exporter.textureFullPathDir, self.fileNoPath)
                 self.image.save_render(textureFile)
 
             # when backed by an actual file, copy to target dir, unless inlining
             else:
                 textureFile = bpy.path.abspath(filePath)
                 if not inlineTextures:
-                    copy(textureFile, material.textureFullPathDir)
+                    copy(textureFile, exporter.textureFullPathDir)
         except:
             ex = exc_info()
-            Logger.warn('Exception during copy:\n\t\t\t\t\t'+ str(ex[1]), 4)
+            msg = str(ex[1])
+            if 'are the same file' not in msg:
+                Logger.warn('Exception during copy:\n\t\t\t\t\t'+ msg, 4)
 
         if inlineTextures:
             # base64 is easiest from a file, so sometimes a temp file was made above;  need to delete those
@@ -73,7 +74,7 @@ class Texture:
 
         else:
             # adjust name to reflect path
-            relPath = material.textureDir
+            relPath = exporter.settings.textureDir
             if len(relPath) > 0:
                 if not relPath.endswith('/'): relPath += '/'
                 self.fileNoPath = relPath + self.fileNoPath
@@ -113,7 +114,7 @@ class Texture:
         file_handler.write('}')
 #===============================================================================
 class BakedTexture(Texture):
-    def __init__(self, textureType, bakedMaterial, bpyMesh):
+    def __init__(self, textureType, bakedMaterial, bpyMesh, exporter):
         self.textureType = textureType
 
         # super class does not have a constructor
@@ -135,7 +136,7 @@ class BakedTexture(Texture):
         self.wrapV = CLAMP_ADDRESSMODE
 
         self.uvMapName = bakedMaterial.uvMapName
-        self.process(bakedMaterial, True, bpyMesh)
+        self.process(exporter, True, bpyMesh)
 #===============================================================================
 class BJSImageTexture(Texture):
     def __init__(self, bjsImageNode, isForEnvironment = False):

@@ -1,5 +1,10 @@
 # Blender2Babylon add-on changelog
 
+## Blender 6.4.3 ##
+* 08 July 2020*
+
+* Fixed exporting of the Blender HDR texture being used as the enviromnent.
+
 ## Blender 6.4.2 ##
 * 02 July 2020*
 
