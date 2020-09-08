@@ -1,5 +1,10 @@
 # Blender2Babylon add-on changelog
 
+## Blender 6.4.4 ##
+* 08 September 2020*
+
+* Allow exported Arcrotate camera to be panned (Right click / drag).
+
 ## Blender 6.4.3 ##
 * 08 July 2020*
 

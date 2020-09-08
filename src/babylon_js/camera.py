@@ -57,21 +57,21 @@ class Camera(FCurveAnimatable):
 
         for constraint in bpyCamera.constraints:
             if constraint.type == 'TRACK_TO':
-                self.lockedTargetId = constraint.target.name
+                self.Target = constraint.target.name
                 break
 
         if self.CameraType == ARC_ROTATE_CAM or self.CameraType == FOLLOW_CAM:
-            if not hasattr(self, 'lockedTargetId'):
+            if not hasattr(self, 'Target'):
                 Logger.warn('Camera type with mandatory target specified, but no target to track set.  Ignored', 2)
                 self.fatalProblem = True
 # - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - -
     def update_for_target_attributes(self, meshesAndNodes):
-        if not hasattr(self, 'lockedTargetId'): return
+        if not hasattr(self, 'Target'): return
 
         # find the actual mesh tracking, so properties can be derrived
         targetFound = False
         for mesh in meshesAndNodes:
-            if mesh.name == self.lockedTargetId:
+            if mesh.name == self.Target:
                 targetMesh = mesh
                 targetFound = True
                 break;
@@ -128,8 +128,8 @@ class Camera(FCurveAnimatable):
             write_float(file_handler, 'beta', self.arcRotBeta)
             write_float(file_handler, 'radius',  self.arcRotRadius)
 
-        if hasattr(self, 'lockedTargetId'):
-            write_string(file_handler, 'lockedTargetId', self.lockedTargetId)
+        if hasattr(self, 'Target'):
+            write_string(file_handler, 'Target', self.Target)
 
         super().to_json_file(file_handler) # Animations
         file_handler.write('}')
