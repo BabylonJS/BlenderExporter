@@ -1,5 +1,10 @@
 # Blender2Babylon add-on changelog
 
+## Blender 6.4.5 ##
+* 10 October 2020*
+
+* Fix Problem in Armature introduced in 6.4.2
+
 ## Blender 6.4.4 ##
 * 08 September 2020*
 
