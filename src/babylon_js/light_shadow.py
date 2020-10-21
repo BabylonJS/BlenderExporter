@@ -186,7 +186,7 @@ bpy.types.Light.useOwnCollection = bpy.props.BoolProperty(
 bpy.types.Light.pbrIntensityMode = bpy.props.EnumProperty(
     name='PBR Intensity Mode',
     description='',
-    items = ((AUTOMATIC_MODE         , 'Automtic'          , ''),
+    items = ((AUTOMATIC_MODE         , 'Automatic'          , ''),
              (POWER_MODE             , 'Luminous Power'    , 'Lumen (lm)'),
              (LUMINOUS_INTENSITY_MODE, 'Luminous Intensity', 'Candela (lm/sr)'),
              (ILLUMINANCE_MODE       , 'Illuminance'       , 'Lux (lm/m^2)'),
