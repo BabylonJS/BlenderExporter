@@ -1,5 +1,10 @@
 # Blender2Babylon add-on changelog
 
+## Blender 6.4.6 ##
+* 08 December 2020*
+
+* Increase maximum # of decimals of precision to 8.
+
 ## Blender 6.4.5 ##
 * 10 October 2020*
 

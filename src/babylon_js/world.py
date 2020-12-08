@@ -148,27 +148,27 @@ bpy.types.World.fogDensity = bpy.props.FloatProperty(
 bpy.types.World.positionsPrecision = bpy.props.IntProperty(
     name='Positions / Shape Keys:',
     description='Max number of digits for positions / shape keys.  Reducing useful to reduce\nfile size when units of meshes already small, .e.g inches',
-    default = 4, min = 0, max = 5
+    default = 4, min = 0, max = 8
 )
 bpy.types.World.normalsPrecision = bpy.props.IntProperty(
     name='Normals:',
     description='Max number of digits for normals',
-    default = 3, min = 1, max = 5
+    default = 3, min = 1, max = 8
 )
 bpy.types.World.UVsPrecision = bpy.props.IntProperty(
     name='UVs:',
     description='Max number of digits for UVs',
-    default = 3, min = 1, max = 5
+    default = 3, min = 1, max = 8
 )
 bpy.types.World.vColorsPrecision = bpy.props.IntProperty(
     name='Vertex Colors:',
     description='Number of digits for colors',
-    default = 3, min = 1, max = 5
+    default = 3, min = 1, max = 8
 )
 bpy.types.World.mWeightsPrecision = bpy.props.IntProperty(
     name='Matrix Weights:',
     description='Max number of digits for armature weights',
-    default = 2, min = 1, max = 5
+    default = 2, min = 1, max = 8
 )
 
 ###     Textures / Materials     ###
