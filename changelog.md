@@ -1,5 +1,15 @@
 # Blender2Babylon add-on changelog
 
+## Blender 2.80.0 ##
+* 29 December 2020*
+
+Renaming of Blender build zip to now be in `Blender2Babylon-2.80x` format, where the
+version of Blender it was made for is now in the name.  This is the exact same
+as version 6.46 for the current file.  The deprecated files are renamed as follows:
+
+- `Blender2Babylon-5.6` is now `Blender2Babylon-2.79x`
+- `io_export_babylon.py` is now `Blender2Babylon-2.75x`
+
 ## Blender 6.4.6 ##
 * 08 December 2020*
 
