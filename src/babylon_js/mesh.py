@@ -171,7 +171,7 @@ class Mesh(FCurveAnimatable):
         # done based on: https://docs.blender.org/api/blender2.8/bpy.types.Depsgraph.html
         depsgraph = bpy.context.evaluated_depsgraph_get()
         objectWithModifiers = bpyMesh.evaluated_get(depsgraph)
-        mesh = objectWithModifiers.to_mesh()
+        mesh = objectWithModifiers.to_mesh(preserve_all_data_layers=True, depsgraph=depsgraph)
 
         # Triangulate mesh if required
         Mesh.mesh_triangulate(mesh)
