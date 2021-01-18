@@ -1,7 +1,12 @@
 # Blender2Babylon add-on changelog
 
+## Blender 2.80.1 ##
+* 18 January 2021
+
+Preserving of vertex groups by https://github.com/mvanacker, see PR https://github.com/BabylonJS/BlenderExporter/pull/44.
+
 ## Blender 2.80.0 ##
-* 29 December 2020*
+* 29 December 2020
 
 Renaming of Blender build zip to now be in `Blender2Babylon-2.80x` format, where the
 version of Blender it was made for is now in the name.  This is the exact same
@@ -11,37 +16,37 @@ as version 6.46 for the current file.  The deprecated files are renamed as follo
 - `io_export_babylon.py` is now `Blender2Babylon-2.75x`
 
 ## Blender 6.4.6 ##
-* 08 December 2020*
+* 08 December 2020
 
 * Increase maximum # of decimals of precision to 8.
 
 ## Blender 6.4.5 ##
-* 10 October 2020*
+* 10 October 2020
 
 * Fix Problem in Armature introduced in 6.4.2
 
 ## Blender 6.4.4 ##
-* 08 September 2020*
+* 08 September 2020
 
 * Allow exported Arcrotate camera to be panned (Right click / drag).
 
 ## Blender 6.4.3 ##
-* 08 July 2020*
+* 08 July 2020
 
 * Fixed exporting of the Blender HDR texture being used as the enviromnent.
 
 ## Blender 6.4.2 ##
-* 02 July 2020*
+* 02 July 2020
 
 * The original animation assigned to an armature is return once animation has completed, by https://github.com/ghempton, see PR https://github.com/BabylonJS/BlenderExporter/pull/25.
 
 ## Blender 6.4.1 ##
-* 09 June 2020*
+* 09 June 2020
 
 * Changed with how Blender 2.83.0 now reports versions.  Exporter now works both ways.
 
 ## Blender 6.4.0 ##
-* 01 June 2020*
+* 01 June 2020
 
 * Fixed exception when an empty material slot, just ignored now.
 * Fixed non-sharing of materials when part of a multi-material.
@@ -49,30 +54,30 @@ as version 6.46 for the current file.  The deprecated files are renamed as follo
 * Changed logging of the # of indexes to the more meaningful # of triangle exported.
 
 ## Blender 6.3.1 ##
-* 11 March 2020*
+* 11 March 2020
 
 * Fixed 'This collection Only' option for lights, when empties are also in the scene.
 
 ## Blender 6.3.0 ##
-* 10 Feburary 2020*
+* 10 February 2020
 
 * Add the option 'preserve Z-up and right-handed' in the world tab.
 
 ## Blender 6.2.4 ##
-* 05 January 2020*
+* 05 January 2020
 
 * Fixed material when not using Nodes
 * Changed how Location, Rotation, & Scale are implemented for Blender 2.81.  Inputs can now be other nodes.  Still works for Blender 2.80, but the as other inputs part.
 
 ## Blender 6.2.1 ##
-* 24 September 2019*
+* 24 September 2019
 
 * added direction onto tangents when doing split normals
 * changed only exporting currently assigned animation to be the default
 * fixed Glossy node from erroring when an unsupported node is assigned as input to Roughness
 
 ## Blender Exporter 6.2.0 ##
-* 21 July 2019*
+* 21 July 2019
 
 * bug fix for meshes with armatures
 * added lights for specific collections
@@ -80,20 +85,20 @@ as version 6.46 for the current file.  The deprecated files are renamed as follo
 * (florianfelix) removed deprecated messages from console
 
 ## Blender Exporter Version 6.1.1
-* 12 May 2019*
+* 12 May 2019
 
 * Support for exporting to either BJS 4.0 or 4.1 regarding names of properties, which changed names
 * Make PBR materials the default
 
 ## Blender Exporter Version 6.1.0
-* 11 May 2019*
+* 11 May 2019
 * Added support for Subsurface, Anisotropic, Clear Coat, & sheen from Principled node for PBR
 * Added tangents when also using custom split normals
 * Added several generic .env files for when PBR is output
 * Made changes reflecting the final API for Blender 2.80
 
 ## Blender Exporter Version 6.0.0
-*24 January 2019*
+*24 January 2019
 
 * Supports Blender 2.80 redesign
 * Removed Internal render materials support
@@ -149,7 +154,7 @@ as version 6.46 for the current file.  The deprecated files are renamed as follo
 
 ## Blender Exporter Version 5.6.4
 
-*17 July 2018*
+*17 July 2018
 
 * Fix typo for exporting only visible layers
 
@@ -157,7 +162,7 @@ as version 6.46 for the current file.  The deprecated files are renamed as follo
 
 ## Blender Exporter Version 5.6.3
 
-*01 June 2018*
+*01 June 2018
 
 * Fix exporter settings panel (in Properties > Scene tab)
 
@@ -169,7 +174,7 @@ as version 6.46 for the current file.  The deprecated files are renamed as follo
 
 ## Blender Exporter Version 5.6.2
 
-*23 March 2018*
+*23 March 2018
 
 The custom property, textureDir, originally for [Tower of Babel](https://github.com/BabylonJS/Extensions/tree/master/QueuedInterpolation/Blender) to
 indicate the directory to write images, is now joined into the name
@@ -187,13 +192,13 @@ html file.
 
 ## Blender Exporter Version 5.6.1
 
-*07 March 2018*
+*07 March 2018
 
 - zip file now has manifest option code
 
 ## Blender Exporter Version 5.6
 
-*02 March 2018*
+*02 March 2018
 
 Essentially, this is an obsolete feature dump.  This in preparation for Blender 2.80 which could cause many changes.  Things removed:
 -  Remove the checking for, and splitting up of meshes with more than 64k vertices.
