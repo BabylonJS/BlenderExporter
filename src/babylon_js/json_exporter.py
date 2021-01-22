@@ -296,7 +296,7 @@ class JsonExporter:
             file_handler.write('{\n')
             file_handler.write('\t"version" : ' + str(calendar.timegm(time.localtime())) + ',\n')
             file_handler.write('\t"enableSceneOffline" : true,\n')
-            file_handler.write('\t"enableTextureOffline" : true\n')
+            file_handler.write('\t"enableTexturesOffline" : true\n')
             file_handler.write('}')
             file_handler.close()
 
