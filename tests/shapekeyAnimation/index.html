@@ -1,0 +1,68 @@
+<html>
+<head>
+    <meta charset="UTF-8">
+    <title>King Lear</title>
+    <link rel="shortcut icon" href="favicon.ico" />
+    <script src="https://cdn.babylonjs.com/babylon.js"></script>
+    <style>
+         html, body   { width: 100%; height: 100%; margin: 0; padding: 0; overflow: hidden; }
+         #renderCanvas{ width: 100%; height: 100%; }
+    </style>
+</head>
+<body>
+<canvas id="renderCanvas"></canvas>
+<script>
+const canvas = document.getElementById("renderCanvas");
+const engine = new BABYLON.Engine(canvas, true);
+const scene = new BABYLON.Scene(engine);
+
+// add urban environment texture to scene for PBR
+const envTexture = BABYLON.CubeTexture.CreateFromPrefilteredData("https://assets.babylonjs.com/environments/environmentSpecular.env", scene);
+scene.environmentTexture = envTexture;
+
+// create a skybox, so can use image processing for background; set environ intensity to zero & add an emissive blue for material
+let hdrSkybox = scene.createDefaultSkybox(scene.environmentTexture, true, 100, 0);
+hdrSkybox.isPickable = false;
+hdrSkybox.material.environmentIntensity = 0;
+hdrSkybox.material.emissiveColor = new BABYLON.Color3(.4, .5, .8);
+
+// change the default scene image processing to add a little vignette
+ const ipScene = scene.imageProcessingConfiguration;
+ipScene.colorCurvesEnabled = true;
+ipScene.colorCurves.midtonesDensity = 71.1898;
+ipScene.colorCurves.shadowsDensity = 95.0729;
+ipScene.colorCurves.shadowsSaturation = 54.8474;
+ipScene.colorCurves.shadowsExposure = 86.2606;
+ipScene.vignetteEnabled = true;
+ipScene.vignetteStretch = 0.0142;
+ipScene.vignetteWeight = 2.4835;
+ipScene.vignetteCameraFov = 1.1473;
+
+// load the export file; textures embedded
+BABYLON.SceneLoader.Append('./', "shapekeyAnimation.babylon", scene);
+
+scene.executeWhenReady(function () {
+    // Attach camera to canvas inputs
+    scene.activeCamera.attachControl(canvas);
+
+    // slow down the zoom on arc cam, since this is a meter scaled scene
+    scene.activeCamera.wheelPrecision = 7500;
+
+    // load the sound & cue animation to start in the load callback
+    const animGroup = scene.getAnimationGroupByName("KeyAction");
+    new BABYLON.Sound("king Lear", "toBeOrNotToBe.mp3", scene, () => {animGroup.start(true, 1.0, animGroup.from, animGroup.to, false);}, { loop: true, autoplay: true });
+
+    // Once the scene is loaded, register a render loop
+    engine.runRenderLoop(() => {
+          scene.render();
+    });
+});
+
+//Resize
+window.addEventListener("resize", () => {
+    engine.resize();
+});
+
+</script>
+</body>
+</html>
