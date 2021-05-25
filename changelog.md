@@ -1,5 +1,22 @@
 # Blender2Babylon add-on changelog
 
+## Blender 2.93.0 ##
+* 25 May 2022
+
+* Changes for API changes in Blender 2.93
+* Shape Key animation added
+* Switched the default of pickable to False for meshes
+* For Shadows, added Cascaded type, autoZBounds & min & max
+
+* For Materials:
+    * Allow for having a value for Albedo / diffuse or emission when there is also a texture for same
+    * The emission color is never defaulted on nor explicitly black, when there is an emissive texture
+    * Added a custom overload property, where a color AND a texture can be specified for Albedo & emissive with the same fields
+    * Added custom properties of 2 Sided lighting, disable lights, invert X or Y normals, & Object Space Normal mapping
+    * Support for Parallax and it's scale bias, & occlusion
+    * Added PBR specific custom properties for Horizon Occlusion, Radiance Occlusion, Irradiance In Fragment, Radiance Over Alpha, Normals Forward, & Specular Anti-Aliasing
+    * Added custom property to allow mixing STD materials in a PBR export via a STD material override
+
 ## Blender 2.80.1 ##
 * 18 January 2021
 

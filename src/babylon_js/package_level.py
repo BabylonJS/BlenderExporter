@@ -29,26 +29,9 @@ def format_exporter_version(bl_info = None):
 def verify_min_blender_version():
     # required version string in addon changed format in 2.83
     reqd = get_bl_info()['blender']
-
-    if bpy.app.version < (2, 83, 0):
-        # reqd in form of '2.77 (sub 0)'
-        split1 = bpy.app.version_string.partition('.')
-        major = int(split1[0])
-        if reqd[0] > major: return False
-
-        split2 = split1[2].partition(' ')
-        minor = int(split2[0])
-        if reqd[1] > minor: return False
-
-        split3 = split2[2].partition(' ')
-        revision = int(split3[2][:1])
-        if reqd[2] > revision: return False
-
-        return True
-
-    else:
-        # reqd in form of '(2, 80, 0)'
-        return bpy.app.version >= reqd
+    
+    # reqd in form of '(2, 80, 0)' since 2.80
+    return bpy.app.version >= reqd
 
 # - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - -
 def getNameSpace(filepathMinusExtension):
@@ -57,13 +40,6 @@ def getNameSpace(filepathMinusExtension):
         return legal_js_identifier(filepathMinusExtension.rpartition('\\')[2])
     else:
         return legal_js_identifier(filepathMinusExtension.rpartition('/')[2])
-# - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - -
-def getLayer(obj):
-    # empties / nodes do not have layers
-    if not hasattr(obj, 'layers') : return -1;
-    for idx, layer in enumerate(obj.layers):
-        if layer:
-            return idx
 # - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - -
 # a class for getting the module name, exporter version, & reqd blender version in get_bl_info()
 class dummy: pass
@@ -300,6 +276,21 @@ def same_array(arrayA, arrayB, precision = FLOAT_PRECISION_DEFAULT):
         if format_float(arrayA[i], fmt) != format_float(arrayB[i], fmt) : return False
 
     return True
+# - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - -
+def shouldBeCulled(object):
+    collectionName = object.users_collection[0].name
+    return collectionExcluded(bpy.context.window.view_layer.layer_collection, collectionName)
+
+def collectionExcluded(viewLayer, collectionName):
+    if collectionName == viewLayer.name:
+        return viewLayer.exclude
+
+    for childViewLayers in viewLayer.children:
+        result = collectionExcluded(childViewLayers, collectionName)
+        if result is not None:
+            return result
+
+    return None
 #===============================================================================
 # module level methods for writing JSON (.babylon) files
 #===============================================================================

@@ -18,12 +18,22 @@ STD_SHADOWS = 'STD'
 POISSON_SHADOWS = 'POISSON'
 ESM_SHADOWS = 'ESM'
 BLUR_ESM_SHADOWS = 'BLUR_ESM'
+CASCADED_SHADOWS = 'CASCADED'
 
 AUTOMATIC_MODE = '0';
 POWER_MODE = '1';
 LUMINOUS_INTENSITY_MODE = '2';
 ILLUMINANCE_MODE = '3';
 LUMINANCE_MODE = '4';
+
+DEF_SHADOW_BIAS = 0.00005
+DEF_SHADOW_DARKNESS = 0
+DEF_SHADOW_BLUR_SCALE = 2
+DEF_SHADOW_BLUR_BOX_OFFSET = 1
+DEF_AUTO_SHADOW_BOUNDS = False
+DEF_SHADOW_MIN_Z = 0
+DEF_SHADOW_MAX_Z = 1000000
+DEF_SHADOW_LAMBDA = 0.5
 #===============================================================================
 class Light(FCurveAnimatable):
     def __init__(self, bpyLight, exporter, usePBRMaterials):
@@ -72,6 +82,12 @@ class Light(FCurveAnimatable):
         self.diffuse   = bpyLight.data.color
         self.specular  = bpyLight.data.color * bpyLight.data.specular_factor
 
+        # changes to the light when there is a shadow map
+        self.usingShadows = bpyLight.data.shadowMap != NO_SHADOWS
+        self.autoCalcShadowZBounds = bpyLight.data.autoCalcShadowZBounds
+        self.shadowMinZ = bpyLight.data.shadowMinZ
+        self.shadowMaxZ = bpyLight.data.shadowMaxZ
+
        # inclusion section (lights run last, so all meshes already processed)
         if bpyLight.data.useOwnCollection:
             lightCollection = bpyLight.users_collection[0].name
@@ -105,6 +121,14 @@ class Light(FCurveAnimatable):
         write_color(file_handler, 'specular', self.specular)
         write_float(file_handler, 'radius', self.radius)
 
+        # changes actually being made to the associated shadow map
+        if self.usingShadows:
+            if self.autoCalcShadowZBounds: # default is false
+                write_bool(file_handler, 'autoCalcShadowZBounds', True)
+            else:
+                if format_f(self.shadowMinZ) != format_f(DEF_SHADOW_MIN_Z): write_float(file_handler, 'shadowMinZ', self.shadowMinZ)
+                if format_f(self.shadowMaxZ) != format_f(DEF_SHADOW_MAX_Z): write_float(file_handler, 'shadowMaxZ', self.shadowMaxZ)
+
         if hasattr(self, 'includedOnlyMeshesIds'):
             file_handler.write(',"includedOnlyMeshesIds":[')
             first = True
@@ -128,14 +152,22 @@ class ShadowGenerator:
         self.shadowBias = lamp.data.shadowBias
         self.shadowDarkness = lamp.data.shadowDarkness
 
-        if lamp.data.shadowMap == ESM_SHADOWS:
-            self.useExponentialShadowMap = True
-        elif lamp.data.shadowMap == POISSON_SHADOWS:
-            self.usePoissonSampling = True
-        elif lamp.data.shadowMap == BLUR_ESM_SHADOWS:
-            self.useBlurExponentialShadowMap = True
+        self.useExponentialShadowMap = lamp.data.shadowMap == ESM_SHADOWS
+        self.usePoissonSampling = lamp.data.shadowMap == POISSON_SHADOWS
+        self.useBlurExponentialShadowMap = lamp.data.shadowMap == BLUR_ESM_SHADOWS
+        self.useCascadedShadowMap = lamp.data.shadowMap == CASCADED_SHADOWS
+
+        if self.useBlurExponentialShadowMap:
             self.shadowBlurScale = lamp.data.shadowBlurScale
             self.shadowBlurBoxOffset = lamp.data.shadowBlurBoxOffset
+
+        if self.useCascadedShadowMap:
+            if lamp.data.type == 'POINT':
+                Logger.warn('Point light type incompatible with cascaded shadows. Shadows cancelled.')
+                self.cancelled = True
+                return
+
+            self.shadowLambda = lamp.data.shadowLambda
 
         # .babylon specific section
         self.shadowCasters = []
@@ -144,20 +176,25 @@ class ShadowGenerator:
                 self.shadowCasters.append(mesh.name)
 # - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - -
     def to_json_file(self, file_handler):
+        # implement cancelled
+        if hasattr(self, 'cancelled') : return
         file_handler.write('{')
         write_int(file_handler, 'mapSize', self.mapSize, True)
         write_string(file_handler, 'lightId', self.lightId)
         write_float(file_handler, 'bias', self.shadowBias, precision = 5)
         write_float(file_handler, 'darkness', self.shadowDarkness)
 
-        if hasattr(self, 'useExponentialShadowMap') :
+        if self.useExponentialShadowMap:
             write_bool(file_handler, 'useExponentialShadowMap', self.useExponentialShadowMap)
-        elif hasattr(self, 'usePoissonSampling'):
+        elif self.usePoissonSampling:
             write_bool(file_handler, 'usePoissonSampling', self.usePoissonSampling)
-        elif hasattr(self, 'useBlurExponentialShadowMap'):
+        elif self.useBlurExponentialShadowMap:
             write_bool(file_handler, 'useBlurExponentialShadowMap', self.useBlurExponentialShadowMap)
-            write_int(file_handler, 'blurScale', self.shadowBlurScale)
-            write_int(file_handler, 'blurBoxOffset', self.shadowBlurBoxOffset)
+            if format_f(self.shadowBlurScale) != format_f(DEF_SHADOW_BLUR_SCALE)         : write_int(file_handler, 'blurScale', self.shadowBlurScale)
+            if format_f(self.shadowBlurBoxOffset) != format_f(DEF_SHADOW_BLUR_BOX_OFFSET): write_int(file_handler, 'blurBoxOffset', self.shadowBlurBoxOffset)
+        elif self.useCascadedShadowMap:
+            write_string(file_handler, 'className', 'CascadedShadowGenerator')
+            if format_f(self.shadowLambda) != format_f(DEF_SHADOW_LAMBDA): write_float (file_handler, 'lambda', self.shadowLambda)
 
         file_handler.write(',"renderList":[')
         first = True
@@ -184,8 +221,8 @@ bpy.types.Light.useOwnCollection = bpy.props.BoolProperty(
 )
 
 bpy.types.Light.pbrIntensityMode = bpy.props.EnumProperty(
-    name='PBR Intensity Mode',
-    description='',
+    name='', # use a row heading for label to reduce dropdown width
+    description='No Meaning for STD Materials',
     items = ((AUTOMATIC_MODE         , 'Automatic'          , ''),
              (POWER_MODE             , 'Luminous Power'    , 'Lumen (lm)'),
              (LUMINOUS_INTENSITY_MODE, 'Luminous Intensity', 'Candela (lm/sr)'),
@@ -197,12 +234,13 @@ bpy.types.Light.pbrIntensityMode = bpy.props.EnumProperty(
 
 bpy.types.Light.shadowMap = bpy.props.EnumProperty(
     name='Shadow Map',
-    description='',
+    description='For Dynamic shadows.  Not available for Area lights,\nwhich convert to HemisphericLight',
     items = ((NO_SHADOWS           , 'None'         , 'No Shadow Maps'),
              (STD_SHADOWS          , 'Standard'     , 'Use Standard Shadow Maps'),
              (POISSON_SHADOWS      , 'Poisson'      , 'Use Poisson Sampling'),
              (ESM_SHADOWS          , 'ESM'          , 'Use Exponential Shadow Maps'),
-             (BLUR_ESM_SHADOWS     , 'Blur ESM'     , 'Use Blur Exponential Shadow Maps')
+             (BLUR_ESM_SHADOWS     , 'Blur ESM'     , 'Use Blur Exponential Shadow Maps'),
+             (CASCADED_SHADOWS     , 'Cascaded'     , 'Use Cascaded Shadow Maps; NOT valid with a Point light')
             ),
     default = NO_SHADOWS
 )
@@ -215,26 +253,52 @@ bpy.types.Light.shadowMapSize = bpy.props.IntProperty(
 bpy.types.Light.shadowBias = bpy.props.FloatProperty(
     name='Shadow Bias',
     description='',
-    default = 0.00005
+    default = DEF_SHADOW_BIAS
+)
+
+bpy.types.Light.autoCalcShadowZBounds = bpy.props.BoolProperty(
+    name='Auto Calculate Shadow Z Bounds',
+    description='',
+    default = DEF_AUTO_SHADOW_BOUNDS
+)
+bpy.types.Light.shadowMinZ = bpy.props.FloatProperty(
+    name='Min Z',
+    description='The minimum distance a caster may be from the light.\nMust be < max',
+    default = DEF_SHADOW_MIN_Z,
+    min = 0,
+    max = DEF_SHADOW_MAX_Z - 1
+)
+bpy.types.Light.shadowMaxZ = bpy.props.FloatProperty(
+    name='Max Z',
+    description='The maximum distance a caster may be from the light.\nMust be > min',
+    default = DEF_SHADOW_MAX_Z,
+    min = 0,
+    max = DEF_SHADOW_MAX_Z
 )
 
 bpy.types.Light.shadowBlurScale = bpy.props.IntProperty(
     name='Blur Scale',
     description='Setting when using a Blur Variance shadow map',
-    default = 2
+    default = DEF_SHADOW_BLUR_SCALE
 )
 
 bpy.types.Light.shadowBlurBoxOffset = bpy.props.IntProperty(
     name='Blur Box Offset',
     description='Setting when using a Blur Variance shadow map',
-    default = 0
+    default = DEF_SHADOW_BLUR_BOX_OFFSET
 )
 bpy.types.Light.shadowDarkness = bpy.props.FloatProperty(
     name='Shadow Darkness',
     description='Shadow Darkness',
-    default = 0,
+    default = DEF_SHADOW_DARKNESS,
     min = 0,
     max = 1
+)
+
+bpy.types.Light.shadowLambda = bpy.props.FloatProperty(
+    name='Shadow Lambda',
+    description='',
+    default=DEF_SHADOW_LAMBDA
 )
 #===============================================================================
 class BJS_PT_LightPanel(bpy.types.Panel):
@@ -251,11 +315,13 @@ class BJS_PT_LightPanel(bpy.types.Panel):
     def draw(self, context):
         ob = context.object
         layout = self.layout
-        layout.prop(ob.data, 'pbrIntensityMode')
+        row = layout.row(heading='PBR Intensity Mode')
+        row.prop(ob.data, 'pbrIntensityMode')
+
         layout.prop(ob.data, 'useOwnCollection')
         layout.prop(ob.data, 'shadowMap')
 
-        usingShadows =  ob.data.shadowMap != NO_SHADOWS
+        usingShadows = ob.data.shadowMap != NO_SHADOWS
         row = layout.row()
         row.enabled = usingShadows
         row.prop(ob.data, 'shadowMapSize')
@@ -269,6 +335,15 @@ class BJS_PT_LightPanel(bpy.types.Panel):
         row.prop(ob.data, 'shadowDarkness')
 
         box = layout.box()
+        row = box.row()
+        row.enabled = usingShadows
+        row.prop(ob.data, 'autoCalcShadowZBounds')
+        row = box.row()
+        row.enabled = usingShadows and not ob.data.autoCalcShadowZBounds
+        row.prop(ob.data, 'shadowMinZ')
+        row.prop(ob.data, 'shadowMaxZ')
+
+        box = layout.box()
         box.label(text="Blur ESM Shadows")
         usingBlur = ob.data.shadowMap == BLUR_ESM_SHADOWS
         row = box.row()
@@ -277,5 +352,12 @@ class BJS_PT_LightPanel(bpy.types.Panel):
         row = box.row()
         row.enabled = usingBlur
         row.prop(ob.data, 'shadowBlurBoxOffset')
+
+        box = layout.box()
+        box.label(text="Cascaded Shadows")
+        cascading = ob.data.shadowMap == CASCADED_SHADOWS
+        row = box.row()
+        row.enabled = cascading
+        row.prop(ob.data, 'shadowLambda')
 
         layout.prop(ob.data, 'autoAnimate')

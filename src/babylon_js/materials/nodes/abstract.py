@@ -2,6 +2,7 @@
 # done as needed in various methods
 from babylon_js.logging import *
 
+from mathutils import Color
 # various texture types, value contains the BJS name when needed to be written in output
 ENVIRON_TEX    = 'value not meaningful 1'
 
@@ -23,12 +24,16 @@ CLEARCOAT_TEX  = '_textureC'           # need 'C' to be unique in the bjsTexture
 CLEARCOAT_BUMP_TEX = '_bumpTexture'
 
 UV_ACTIVE_TEXTURE = 'value not meaningful 3'
+
+DEF_DIFFUSE_COLOR = Color((.8, .8, .8))
 #===============================================================================
 class AbstractBJSNode:
 
-    def __init__(self, bpyNode, socketName, isTopLevel = False):
+    def __init__(self, bpyNode, socketName, overloadChannels = False):
         self.socketName = socketName
         self.bpyType = bpyNode.bl_idname
+
+        isTopLevel = socketName == 'ShaderNodeOutputWorld' or socketName == 'ShaderNodeOutputLamp' or socketName == 'ShaderNodeOutputMaterial'
 
         # scalar bubbled up channel values for Std Material
         self.diffuseColor  = None  # same as albedoColor
@@ -70,23 +75,25 @@ class AbstractBJSNode:
         self.mustBakeRefraction = False # not currently bakeable
 
         # evaluate each of the inputs; either add the current / default value, linked Node, or None
-        self.bjsInputs = {}
+        self.bjsSubNodes = {}
+        self.defaults = {}
         for nodeSocket in bpyNode.inputs:
             # there are a maximum of 1 inputs per socket
             if len(nodeSocket.links) == 1:
                 # recursive instancing of inputs with their matching wrapper sub-class
-                bjsWrapperNode = AbstractBJSNode.GetBJSWrapperNode(nodeSocket.links[0].from_node, nodeSocket.name)
+                bjsWrapperNode = AbstractBJSNode.GetBJSWrapperNode(nodeSocket.links[0].from_node, nodeSocket.name, overloadChannels)
                 self.bubbleUp(bjsWrapperNode)
-                self.bjsInputs[nodeSocket.name] = bjsWrapperNode
-            #    print (nodeSocket.name + ' @ ' + str(nodeSocket.links[0]))
-
+                self.bjsSubNodes[nodeSocket.name] = bjsWrapperNode
+#                print ('found link for ' + nodeSocket.name + ' @ ' + str(nodeSocket.links[0]))
             else:
-                if hasattr(nodeSocket, 'default_value'):
-                #    print('\t' + nodeSocket.name + ': ' + str(nodeSocket.default_value))
-                    self.bjsInputs[nodeSocket.name] = nodeSocket.default_value
-                else:
-                #    print('\t' + nodeSocket.name + ': no VALUE')
-                    self.bjsInputs[nodeSocket.name] = None
+                self.bjsSubNodes[nodeSocket.name] = None
+
+            if hasattr(nodeSocket, 'default_value'):
+#                print('\t' + nodeSocket.name + ': ' + str(nodeSocket.default_value))
+                self.defaults[nodeSocket.name] = nodeSocket.default_value
+            else:
+#                print('\t' + nodeSocket.name + ': no VALUE')
+                self.defaults[nodeSocket.name] = None
 
             # when top level, ignore Volume & Displacement; if unsupported nodes, will bake un-necessarily
             if isTopLevel: break
@@ -206,9 +213,12 @@ class AbstractBJSNode:
 # - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - -
 #     Methods for finding inputs to this node
 # - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - -
+    def getDefault(self, socketName):
+        return self.defaults[socketName]
+
     # leave out bpyType when value can either be a default value or another node
     def findInput(self, socketName, bpyTypeReqd = None):
-        value = self.bjsInputs[socketName]
+        value = self.bjsSubNodes[socketName]
         if bpyTypeReqd is not None:
             if not hasattr(value, 'bpyType') or value.bpyType != bpyTypeReqd:
                 return None
@@ -250,11 +260,11 @@ class AbstractBJSNode:
         return AbstractBJSNode.readNodeTree(node_tree, 'ShaderNodeOutputLamp')
 
     @staticmethod
-    def readMaterialNodeTree(node_tree):
-        return AbstractBJSNode.readNodeTree(node_tree, 'ShaderNodeOutputMaterial')
+    def readMaterialNodeTree(node_tree, overloadChannels):
+        return AbstractBJSNode.readNodeTree(node_tree, 'ShaderNodeOutputMaterial', overloadChannels)
 
     @staticmethod
-    def readNodeTree(node_tree, topLevelId):
+    def readNodeTree(node_tree, topLevelId, overloadChannels = False):
         # https://blender.stackexchange.com/questions/30328/how-to-get-the-end-node-of-a-tree-in-python
         output = None
         for node in node_tree.nodes:
@@ -271,17 +281,16 @@ class AbstractBJSNode:
         if output is None:
             return None
 
-        return AbstractBJSNode(output, topLevelId, True)
+        return AbstractBJSNode(output, topLevelId, overloadChannels)
 # - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - -
     @staticmethod
-    def GetBJSWrapperNode(bpyNode, socketName):
+    def GetBJSWrapperNode(bpyNode, socketName, overloadChannels):
         from .ambient_occlusion import AmbientOcclusionBJSNode
         from .background import BackgroundBJSNode
         from .diffuse import DiffuseBJSNode
         from .emission import EmissionBJSNode
         from .fresnel import FresnelBJSNode
         from .glossy import GlossyBJSNode
-        from .gltf import GltfBJSNode
         from .mapping import MappingBJSNode
         from .normal_map import NormalMapBJSNode
         from .passthru import PassThruBJSNode
@@ -295,55 +304,52 @@ class AbstractBJSNode:
         from .unsupported import UnsupportedNode
 
         if AmbientOcclusionBJSNode.bpyType == bpyNode.bl_idname:
-            return AmbientOcclusionBJSNode(bpyNode, socketName)
+            return AmbientOcclusionBJSNode(bpyNode, socketName, overloadChannels)
 
         elif BackgroundBJSNode.bpyType == bpyNode.bl_idname:
-            return BackgroundBJSNode(bpyNode, socketName)
+            return BackgroundBJSNode(bpyNode, socketName, overloadChannels)
 
         elif DiffuseBJSNode.bpyType == bpyNode.bl_idname:
-            return DiffuseBJSNode(bpyNode, socketName)
+            return DiffuseBJSNode(bpyNode, socketName, overloadChannels)
 
         elif EmissionBJSNode.bpyType == bpyNode.bl_idname:
-            return EmissionBJSNode(bpyNode, socketName)
+            return EmissionBJSNode(bpyNode, socketName, overloadChannels)
 
         elif FresnelBJSNode.bpyType == bpyNode.bl_idname:
-            return FresnelBJSNode(bpyNode, socketName)
+            return FresnelBJSNode(bpyNode, socketName, overloadChannels)
 
         elif GlossyBJSNode.bpyType == bpyNode.bl_idname:
-            return GlossyBJSNode(bpyNode, socketName)
-
-        elif GltfBJSNode.bpyType == bpyNode.bl_idname:
-            return GltfBJSNode(bpyNode, socketName)
+            return GlossyBJSNode(bpyNode, socketName, overloadChannels)
 
         elif MappingBJSNode.bpyType == bpyNode.bl_idname:
-            return MappingBJSNode(bpyNode, socketName)
+            return MappingBJSNode(bpyNode, socketName, overloadChannels)
 
         elif NormalMapBJSNode.bpyType == bpyNode.bl_idname:
-            return NormalMapBJSNode(bpyNode, socketName)
+            return NormalMapBJSNode(bpyNode, socketName, overloadChannels)
 
         elif bpyNode.bl_idname in PassThruBJSNode.PASS_THRU_SHADERS:
-            return PassThruBJSNode(bpyNode, socketName)
+            return PassThruBJSNode(bpyNode, socketName, overloadChannels)
 
         elif PrincipledBJSNode.bpyType == bpyNode.bl_idname:
-            return PrincipledBJSNode(bpyNode, socketName)
+            return PrincipledBJSNode(bpyNode, socketName, overloadChannels)
 
         elif RefractionBJSNode.bpyType == bpyNode.bl_idname:
-            return RefractionBJSNode(bpyNode, socketName)
+            return RefractionBJSNode(bpyNode, socketName, overloadChannels)
 
         elif TextureCoordBJSNode.bpyType == bpyNode.bl_idname:
-            return TextureCoordBJSNode(bpyNode, socketName)
+            return TextureCoordBJSNode(bpyNode, socketName, overloadChannels)
 
         elif TextureEnvironmentBJSNode.bpyType == bpyNode.bl_idname:
-            return TextureEnvironmentBJSNode(bpyNode, socketName)
+            return TextureEnvironmentBJSNode(bpyNode, socketName, overloadChannels)
 
         elif TextureImageBJSNode.bpyType == bpyNode.bl_idname:
-            return TextureImageBJSNode(bpyNode, socketName)
+            return TextureImageBJSNode(bpyNode, socketName, overloadChannels)
 
         elif TransparentBJSNode.bpyType == bpyNode.bl_idname:
-            return TransparentBJSNode(bpyNode, socketName)
+            return TransparentBJSNode(bpyNode, socketName, overloadChannels)
 
         elif UVMapBJSNode.bpyType == bpyNode.bl_idname:
-            return UVMapBJSNode(bpyNode, socketName)
+            return UVMapBJSNode(bpyNode, socketName, overloadChannels)
 
         else:
-            return UnsupportedNode(bpyNode, socketName)
+            return UnsupportedNode(bpyNode, socketName, overloadChannels)

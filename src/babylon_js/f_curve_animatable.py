@@ -46,6 +46,7 @@ class FCurveAnimatable:
                 if animationRange is None:
                     continue
 
+                hasData = False
                 if supportsRotation:
                     hasData = rotAnimation.append_range(object, animationRange)
 

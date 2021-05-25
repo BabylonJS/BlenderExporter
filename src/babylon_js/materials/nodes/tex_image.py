@@ -5,8 +5,8 @@ from ..texture import *
 class TextureImageBJSNode(AbstractBJSNode):
     bpyType = 'ShaderNodeTexImage'
 
-    def __init__(self, bpyNode, socketName):
-        super().__init__(bpyNode, socketName)
+    def __init__(self, bpyNode, socketName, overloadChannels):
+        super().__init__(bpyNode, socketName, overloadChannels)
 
         # extract node specific (non-input) values
         self.image = bpyNode.image

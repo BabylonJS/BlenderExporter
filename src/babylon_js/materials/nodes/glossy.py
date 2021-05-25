@@ -6,8 +6,8 @@ from mathutils import Color
 class GlossyBJSNode(AbstractBJSNode):
     bpyType = 'ShaderNodeBsdfGlossy'
 
-    def __init__(self, bpyNode, socketName):
-        super().__init__(bpyNode, socketName)
+    def __init__(self, bpyNode, socketName, overloadChannels):
+        super().__init__(bpyNode, socketName, overloadChannels)
 
         input = self.findInput('Color')
         defaultColor = self.findTexture(input, SPECULAR_TEX)

@@ -6,7 +6,7 @@ import bpy
 FRAME_BASED_ANIMATION = True # turn off for diagnostics; only actual keyframes will be written for skeleton animation
 
 # passed to Animation constructor from animatable objects, defined in BABYLON.Animation
-#ANIMATIONTYPE_FLOAT = 0
+ANIMATIONTYPE_FLOAT = 0
 ANIMATIONTYPE_VECTOR3 = 1
 ANIMATIONTYPE_QUATERNION = 2
 ANIMATIONTYPE_MATRIX = 3
@@ -70,7 +70,7 @@ class AnimationRange:
                     frames[frame] = True
 
             frames = sorted(frames)
-            
+
         if len(frames) == 0:
             Logger.warn('action ' + action.name + ' has no frames, ignored.', 3)
             return None
@@ -126,8 +126,11 @@ class Animation:
     def to_json_file(self, file_handler):
         precision = bpy.context.scene.world.positionsPrecision if self.propertyInBabylon == 'position' else FLOAT_PRECISION_DEFAULT
         file_handler.write('{')
-        write_int(file_handler, 'dataType', self.dataType, True)
+        write_string(file_handler, 'name', self.name, True)
+        write_string(file_handler, 'property', self.propertyInBabylon)
+        write_int(file_handler, 'dataType', self.dataType)
         write_int(file_handler, 'framePerSecond', self.framePerSecond)
+        write_int(file_handler, 'loopBehavior', self.loopBehavior)
 
         file_handler.write(',"keys":[')
         first = True
@@ -142,17 +145,13 @@ class Animation:
                 write_matrix4(file_handler, 'values', value_idx)
             elif self.dataType == ANIMATIONTYPE_QUATERNION:
                 write_quaternion(file_handler, 'values', value_idx)
+            elif self.dataType == ANIMATIONTYPE_FLOAT:
+                file_handler.write(',"values":[' + format_f(value_idx, precision = precision) + ']')
             else:
                 write_vector(file_handler, 'values', value_idx, precision)
             file_handler.write('}')
 
         file_handler.write(']')   # close keys
-
-        # put this at the end to make less crazy looking ]}]]]}}}}}}}]]]],
-        # since animation is also at the end of the bone, mesh, camera, or light
-        write_int(file_handler, 'loopBehavior', self.loopBehavior)
-        write_string(file_handler, 'name', self.name)
-        write_string(file_handler, 'property', self.propertyInBabylon)
         file_handler.write('}')
 #===============================================================================
 class VectorAnimation(Animation):

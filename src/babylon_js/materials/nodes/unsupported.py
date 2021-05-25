@@ -8,8 +8,8 @@ PROCEDURAL_TEXTURES = 'ShaderNodeTexBrick ShaderNodeTexChecker ShaderNodeTexGrad
 class UnsupportedNode(AbstractBJSNode):
     bpyType = 'NONE'
 
-    def __init__(self, bpyNode, socketName):
-        super().__init__(bpyNode, socketName)
+    def __init__(self, bpyNode, socketName, overloadChannels):
+        super().__init__(bpyNode, socketName, overloadChannels)
         self.mustBake = True
         self.loggedWarning = True
         Logger.warn('unsupported node type(' + bpyNode.bl_idname +') will trigger baking', 3)

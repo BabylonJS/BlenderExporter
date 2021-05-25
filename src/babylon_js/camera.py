@@ -15,8 +15,6 @@ UNIVERSAL_CAM = 'UniversalCamera'
 GAMEPAD_CAM = 'GamepadCamera'
 TOUCH_CAM = 'TouchCamera'
 V_JOYSTICKS_CAM = 'VirtualJoysticksCamera'
-VR_DEV_ORIENT_FREE_CAM ='VRDeviceOrientationFreeCamera'
-WEB_VR_FREE_CAM = 'WebVRFreeCamera'
 
 # 3D camera rigs, defined in BABYLON.Camera, must be strings to be in 'dropdown'
 RIG_MODE_NONE = '0'
@@ -25,6 +23,9 @@ RIG_MODE_STEREOSCOPIC_SIDEBYSIDE_PARALLEL = '11'
 RIG_MODE_STEREOSCOPIC_SIDEBYSIDE_CROSSEYED = '12'
 RIG_MODE_STEREOSCOPIC_OVERUNDER = '13'
 RIG_MODE_VR = '20'
+
+DEF_CHECK_COLLISIONS = False
+DEF_APPLY_GRAVITY = False
 #===============================================================================
 class Camera(FCurveAnimatable):
     def __init__(self, bpyCamera, exporter):
@@ -46,8 +47,6 @@ class Camera(FCurveAnimatable):
         self.fov = bpyCamera.data.angle
         self.minZ = bpyCamera.data.clip_start
         self.maxZ = bpyCamera.data.clip_end
-        self.speed = 1.0
-        self.inertia = 0.9
         self.checkCollisions = bpyCamera.data.checkCollisions
         self.applyGravity = bpyCamera.data.applyGravity
         self.ellipsoid = bpyCamera.data.ellipsoid
@@ -104,15 +103,13 @@ class Camera(FCurveAnimatable):
         write_float(file_handler, 'fov', self.fov)
         write_float(file_handler, 'minZ', self.minZ)
         write_float(file_handler, 'maxZ', self.maxZ)
-        write_float(file_handler, 'speed', self.speed)
-        write_float(file_handler, 'inertia', self.inertia)
-        write_bool(file_handler, 'checkCollisions', self.checkCollisions)
-        write_bool(file_handler, 'applyGravity', self.applyGravity)
+        if self.checkCollisions: write_bool(file_handler, 'checkCollisions', True) # default is false
+        if self.applyGravity   : write_bool(file_handler, 'applyGravity', True) # default is false
         write_array3(file_handler, 'ellipsoid', self.ellipsoid)
 
-        # always assign rig, even when none, Reason:  Could have VR camera with different Rig than default
-        write_int(file_handler, 'cameraRigMode', self.Camera3DRig)
-        write_float(file_handler, 'interaxial_distance', self.interaxialDistance)
+        if self.Camera3DRig != RIG_MODE_NONE: 
+            write_int(file_handler, 'cameraRigMode', self.Camera3DRig)
+            write_float(file_handler, 'interaxial_distance', self.interaxialDistance)
 
         write_string(file_handler, 'type', self.CameraType)
 
@@ -150,25 +147,23 @@ bpy.types.Camera.CameraType = bpy.props.EnumProperty(
              (UNIVERSAL_CAM          , 'Universal'               , 'Use Universal Camera'),
              (FOLLOW_CAM             , 'Follow'                  , 'Use Follow Camera'),
              (DEV_ORIENT_CAM         , 'Device Orientation'      , 'Use Device Orientation Camera'),
-             (ARC_ROTATE_CAM         , 'Arc Rotate'              , 'Use Arc Rotate Camera'),
-             (VR_DEV_ORIENT_FREE_CAM , 'VR Dev Orientation Free' , 'Use VR Dev Orientation Free Camera'),
-             (WEB_VR_FREE_CAM        , 'Web VR Free'             , 'Use Web VR Free Camera')
+             (ARC_ROTATE_CAM         , 'Arc Rotate'              , 'Use Arc Rotate Camera')
             ),
     default = UNIVERSAL_CAM
 )
 bpy.types.Camera.checkCollisions = bpy.props.BoolProperty(
     name='Check Collisions',
     description='',
-    default = False
+    default = DEF_CHECK_COLLISIONS
 )
 bpy.types.Camera.applyGravity = bpy.props.BoolProperty(
     name='Apply Gravity',
     description='',
-    default = False
+    default = DEF_APPLY_GRAVITY
 )
 bpy.types.Camera.ellipsoid = bpy.props.FloatVectorProperty(
     name='Ellipsoid',
-    description='',
+    description='Not used except for a collision system.  Enter Coordinates in Y-UP terms',
     default = mathutils.Vector((0.2, 0.9, 0.2))
 )
 bpy.types.Camera.Camera3DRig = bpy.props.EnumProperty(

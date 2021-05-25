@@ -4,8 +4,8 @@ from .abstract  import AbstractBJSNode, BUMP_TEX
 class NormalMapBJSNode(AbstractBJSNode):
     bpyType = 'ShaderNodeNormalMap'
 
-    def __init__(self, bpyNode, socketName):
-        super().__init__(bpyNode, socketName)
+    def __init__(self, bpyNode, socketName, overloadChannels):
+        super().__init__(bpyNode, socketName, overloadChannels)
 
         input = self.findInput('Color')
         self.findTexture(input, BUMP_TEX)

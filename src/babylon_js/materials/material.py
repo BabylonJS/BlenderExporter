@@ -11,6 +11,29 @@ PBRMATERIAL_ALPHATEST = '1'
 PBRMATERIAL_ALPHABLEND = '2'
 PBRMATERIAL_ALPHATESTANDBLEND  = '3'
 
+# BJS defaults for both setting initial value of property, and reduce output if final value same as default
+DEF_CULLING = True
+DEF_2_SIDED_LIGHTING = False
+DEF_MAX_LIGHTS = 4
+DEF_DISABLE_LIGHTING = False
+DEF_INV_NORMALS_X = False
+DEF_INV_NORMALS_Y = False
+DEF_OBJECT_SPACE_NORMAL_MAP = False
+DEF_PARALLAX = False
+DEF_PARALLAX_SCALE_BIAS = 0.05
+DEF_PARALLAX_OCCLUSION = False
+DEF_TANSPARENCY_MODE = PBRMATERIAL_OPAQUE
+DEF_ALPHA_CUTOFF = 0.4
+DEF_ENV_INTENSITY = 1.0
+DEF_HORIZON_OCCLUSION = True
+DEF_RADIANCE_OCCLUSION = True
+DEF_IRADIANCE_IN_FRAG = False
+DEF_RADIANCE_OVER_ALPHA = True
+DEF_NORMALS_FORWARD = False
+DEF_SPECULAR_ANTIALISING = False
+
+DEF_EMISSIVE_INTENSITY = 1.0
+
 #===============================================================================
 class MultiMaterial:
     def __init__(self, material_slots, idx, nameSpace):
@@ -40,27 +63,41 @@ class BJSMaterial:
         self.textures = {}
         self.exporter = exporter # keep for later reference
 
-        self.isPBR = exporter.settings.usePBRMaterials
         self.textureFullPathDir = exporter.textureFullPathDir
-        self.textureDir = exporter.settings.textureDir
 
         # transfer from either the Blender or previous BJSMaterial
-        self.checkReadyOnlyOnce = mat.checkReadyOnlyOnce
-        self.maxSimultaneousLights = mat.maxSimultaneousLights
+        self.overloadChannels = mat.overloadChannels
         self.backFaceCulling = mat.backFaceCulling
+        self.twoSidedLighting = mat.twoSidedLighting
+        self.disableLighting = mat.disableLighting
+        self.maxSimultaneousLights = mat.maxSimultaneousLights
+        self.invertNormalMapX = mat.invertNormalMapX
+        self.invertNormalMapY = mat.invertNormalMapY
+        self.useObjectSpaceNormalMap = mat.useObjectSpaceNormalMap
+        self.useParallax = mat.useParallax
+        self.parallaxScaleBias = mat.parallaxScaleBias
+        self.useParallaxOcclusion = mat.useParallaxOcclusion
         self.use_nodes = mat.use_nodes
         self.transparencyMode = mat.transparencyMode
         self.alphaCutOff = mat.alphaCutOff
         self.intensityOverride = mat.intensityOverride
         self.environmentIntensity = mat.environmentIntensity if mat.intensityOverride else exporter.settings.environmentIntensity
+        self.useHorizonOcclusion = mat.useHorizonOcclusion
+        self.useRadianceOcclusion = mat.useRadianceOcclusion
+        self.forceIrradianceInFragment = mat.forceIrradianceInFragment
+        self.useRadianceOverAlpha = mat.useRadianceOverAlpha
+        self.forceNormalForward = mat.forceNormalForward
+        self.enableSpecularAntiAliasing = mat.enableSpecularAntiAliasing
+        self.STDMatOverride = mat.STDMatOverride
 
+        self.isPBR = exporter.settings.usePBRMaterials and not self.STDMatOverride
         if not isinstance(mat, BJSMaterial):
             bpyMaterial = mat
             self.name = bpyMaterial.name
             Logger.log('processing begun of material:  ' +  self.name, 2)
 
             if self.use_nodes:
-                self.bjsNodeTree = AbstractBJSNode.readMaterialNodeTree(bpyMaterial.node_tree)
+                self.bjsNodeTree = AbstractBJSNode.readMaterialNodeTree(bpyMaterial.node_tree, self.overloadChannels)
             else:
                 self.diffuseColor = bpyMaterial.diffuse_color
                 self.specularColor = bpyMaterial.specular_intensity * bpyMaterial.specular_color
@@ -136,7 +173,7 @@ class BJSMaterial:
             uv.active = True
             uv.active_render = not forceBaking # want the other uv's for the source when combining
 
-            bpy.ops.uv.smart_project(angle_limit = 66.0, island_margin = 0.0, user_area_weight = 1.0, use_aspect = True, stretch_to_bounds = True)
+            bpy.ops.uv.smart_project(area_weight = 1.0, scale_to_bounds = True)
 
             # syntax for using unwrap enstead of smart project
 #            bpy.ops.uv.unwrap(margin = 1.0) # defaulting on all
@@ -160,18 +197,23 @@ class BJSMaterial:
         # now go thru all the textures that need to be baked
         if recipe.diffuseChannel:
             self.bakeChannel(DIFFUSE_TEX , 'DIFFUSE', usePNG, recipe.node_trees, bpyMesh)
+            Logger.log('Diffuse / albeto channel baked', 3)
 
         if recipe.ambientChannel:
             self.bakeChannel(AMBIENT_TEX , 'AO'     , usePNG, recipe.node_trees, bpyMesh)
+            Logger.log('ambient channel baked', 3)
 
         if recipe.emissiveChannel:
             self.bakeChannel(EMMISIVE_TEX, 'EMIT'   , usePNG, recipe.node_trees, bpyMesh)
+            Logger.log('emissive channel baked', 3)
 
         if recipe.specularChannel:
             self.bakeChannel(SPECULAR_TEX, 'GLOSSY' , usePNG, recipe.node_trees, bpyMesh)
+            Logger.log('specular channel baked', 3)
 
         if recipe.bumpChannel:
             self.bakeChannel(BUMP_TEX    , 'NORMAL' , usePNG, recipe.node_trees, bpyMesh)
+            Logger.log('bump channel baked', 3)
 
         # Toggle vertex selection & mode, if setting changed their value
         bpy.ops.mesh.select_all(action='TOGGLE')  # still in edit mode toggle select back to previous
@@ -221,10 +263,26 @@ class BJSMaterial:
         write_string(file_handler, 'customType', 'BABYLON.PBRMaterial' if self.isPBR else 'BABYLON.StandardMaterial')
 
         # properties from UI
-        write_bool(file_handler, 'backFaceCulling', self.backFaceCulling)
-        write_bool(file_handler, 'checkReadyOnlyOnce', self.checkReadyOnlyOnce)
-        write_int(file_handler, 'maxSimultaneousLights', self.maxSimultaneousLights)
-        if self.isPBR: write_float(file_handler, 'environmentIntensity', self.environmentIntensity)
+        if self.backFaceCulling != DEF_CULLING                                                       : write_bool(file_handler, 'backFaceCulling', self.backFaceCulling)
+        if self.twoSidedLighting != DEF_2_SIDED_LIGHTING                                             : write_bool(file_handler, 'twoSidedLighting',self.twoSidedLighting)
+        if self.disableLighting != DEF_DISABLE_LIGHTING                                              : write_bool(file_handler, 'disableLighting', self.disableLighting)
+        if self.maxSimultaneousLights != DEF_MAX_LIGHTS                                              : write_int(file_handler, 'maxSimultaneousLights', self.maxSimultaneousLights)
+        if self.invertNormalMapX != DEF_INV_NORMALS_X                                                : write_bool(file_handler, 'invertNormalMapX', self.invertNormalMapX)
+        if self.invertNormalMapY != DEF_INV_NORMALS_Y                                                : write_bool(file_handler, 'invertNormalMapY', self.invertNormalMapY)
+        if self.useObjectSpaceNormalMap != DEF_OBJECT_SPACE_NORMAL_MAP                               : write_bool(file_handler, 'useObjectSpaceNormalMap', self.useObjectSpaceNormalMap)
+        if self.useParallax != DEF_PARALLAX                                                          : write_bool(file_handler, 'useParallax', self.useParallax)
+        if self.useParallax and format_f(self.parallaxScaleBias) != format_f(DEF_PARALLAX_SCALE_BIAS): write_float(file_handler, 'parallaxScaleBias', self.parallaxScaleBias)
+        if self.useParallax and self.useParallaxOcclusion != DEF_PARALLAX_OCCLUSION                  : write_bool(file_handler, 'useParallaxOcclusion', self.useParallaxOcclusion)
+
+        # properties from UI which are PBR Only
+        if self.isPBR:
+            if self.environmentIntensity != DEF_ENV_INTENSITY             : write_float(file_handler, 'environmentIntensity', self.environmentIntensity)
+            if self.useHorizonOcclusion != DEF_HORIZON_OCCLUSION          : write_bool(file_handler, 'useHorizonOcclusion', self.useHorizonOcclusion)
+            if self.useRadianceOcclusion != DEF_RADIANCE_OCCLUSION        : write_bool(file_handler, 'useRadianceOcclusion', self.useRadianceOcclusion)
+            if self.forceIrradianceInFragment != DEF_IRADIANCE_IN_FRAG    : write_bool(file_handler, 'forceIrradianceInFragment', self.forceIrradianceInFragment)
+            if self.useRadianceOverAlpha != DEF_RADIANCE_OVER_ALPHA       : write_bool(file_handler, 'useRadianceOverAlpha', self.useRadianceOverAlpha)
+            if self.forceNormalForward != DEF_NORMALS_FORWARD             : write_bool(file_handler, 'forceNormalForward', self.forceNormalForward)
+            if self.enableSpecularAntiAliasing != DEF_SPECULAR_ANTIALISING: write_bool(file_handler, 'useRadianceOverAlpha', self.enableSpecularAntiAliasing)
 
         if not self.use_nodes:
             propName = 'albedo' if self.isPBR else 'diffuse'
@@ -242,7 +300,7 @@ class BJSMaterial:
         #--- scalar properties, when not also a texture ----
 
         # sources diffuse & principled nodes
-        if self.bjsNodeTree.diffuseColor is not None and DIFFUSE_TEX not in self.textures:
+        if self.bjsNodeTree.diffuseColor is not None:
             propName = 'albedo' if self.isPBR else 'diffuse'
             write_color(file_handler, propName, self.bjsNodeTree.diffuseColor)
 
@@ -250,7 +308,12 @@ class BJSMaterial:
         if self.bjsNodeTree.ambientColor is not None:
             write_color(file_handler, 'ambient', self.bjsNodeTree.ambientColor)
 
-        # source emissive node
+        # use white for emmissive color when there is a texture, but no color or explicitly black due to overload
+        if EMMISIVE_TEX in self.textures:
+            if self.bjsNodeTree.emissiveColor is None or same_color(self.bjsNodeTree.emissiveColor, Color((0, 0, 0))):
+                self.bjsNodeTree.emissiveColor = Color((1, 1, 1))
+            
+        # source emissive node    
         if self.bjsNodeTree.emissiveColor is not None:
             write_color(file_handler, 'emissive', self.bjsNodeTree.emissiveColor)
 
@@ -275,14 +338,15 @@ class BJSMaterial:
 
         # properties specific to PBR
         if self.isPBR:
-            write_int(file_handler, 'transparencyMode', self.transparencyMode)
-            write_float(file_handler, 'alphaCutOff', self.alphaCutOff)
+            if self.transparencyMode != DEF_TANSPARENCY_MODE: write_int(file_handler, 'transparencyMode', self.transparencyMode)
+            if format_f(self.alphaCutOff) != format_f(DEF_ALPHA_CUTOFF): write_float(file_handler, 'alphaCutOff', self.alphaCutOff)
+
             # source principle node
             if self.bjsNodeTree.metallic is not None or METAL_TEX in self.textures:
                 write_float(file_handler, 'metallic', 1.0 if METAL_TEX in self.textures else self.bjsNodeTree.metallic)
 
             # source emissive node
-            if self.bjsNodeTree.emissiveIntensity is not None:
+            if self.bjsNodeTree.emissiveIntensity is not None and self.bjsNodeTree.emissiveIntensity != DEF_EMISSIVE_INTENSITY:
                 write_float(file_handler, 'emissiveIntensity', self.bjsNodeTree.emissiveIntensity)
 
             # source principled node
@@ -418,45 +482,120 @@ class BJSMaterial:
                 bpy.data.images.remove(image)
                 break
 #===============================================================================
+bpy.types.Material.overloadChannels = bpy.props.BoolProperty(
+    name='Overload Colors & textures for Diffuse / Albedo & Emmission Fields',
+    description='When checked, a color is sent for the field even when\nit is also connected with a texture node',
+    default = False
+)
 bpy.types.Material.backFaceCulling = bpy.props.BoolProperty(
     name='Back Face Culling',
-    description='When checked, the faces on the inside of the mesh will not be drawn.',
-    default = True
+    description='When checked, the faces on the inside of the mesh will not be drawn',
+    default = DEF_CULLING
 )
-bpy.types.Material.checkReadyOnlyOnce = bpy.props.BoolProperty(
-    name='Check Ready Only Once',
-    description='When checked better CPU utilization.  Advanced user option.',
-    default = False
+bpy.types.Material.twoSidedLighting = bpy.props.BoolProperty(
+    name='2 Sided lighting',
+    description='When checked and backfaceCulling is false,\nnormals will be flipped on the backside',
+    default = DEF_2_SIDED_LIGHTING
+)
+bpy.types.Material.disableLighting = bpy.props.BoolProperty(
+    name='Disable Lights',
+    description='When checked, disables all the lights affecting the material',
+    default = DEF_DISABLE_LIGHTING
 )
 bpy.types.Material.maxSimultaneousLights = bpy.props.IntProperty(
     name='Max Simultaneous Lights',
     description='BJS property set on each material.\nSet higher for more complex lighting.\nSet lower for armatures on mobile',
-    default = 4, min = 0, max = 32
+    default = DEF_MAX_LIGHTS, min = 0, max = 32
+)
+bpy.types.Material.invertNormalMapX = bpy.props.BoolProperty(
+    name='Invert Normals X',
+    description='When checked, x component of normal map value will invert (x = 1.0 - x)',
+    default = DEF_INV_NORMALS_X
+)
+bpy.types.Material.invertNormalMapY = bpy.props.BoolProperty(
+    name='Invert Normals Y',
+    description='When checked, y component (z in Blender)\nof normal map value will invert (y = 1.0 - y)',
+    default = DEF_INV_NORMALS_Y
+)
+bpy.types.Material.useObjectSpaceNormalMap = bpy.props.BoolProperty(
+    name='Object Space Normal Map',
+    description='When checked, Allows using an object space normal map (instead of tangent space)',
+    default = DEF_OBJECT_SPACE_NORMAL_MAP
+)
+bpy.types.Material.useParallax = bpy.props.BoolProperty(
+    name='Parallax',
+    description='When checked, parallax is enabled',
+    default = DEF_PARALLAX
+)
+bpy.types.Material.parallaxScaleBias = bpy.props.FloatProperty(
+    name='Scale Bias',
+    description='A scaling factor that determine which "depth" the height\nmap should represent for Parallax',
+    default = DEF_PARALLAX_SCALE_BIAS, min = 0, max = 1.0
+)
+bpy.types.Material.useParallaxOcclusion = bpy.props.BoolProperty(
+    name='Parallax Occlusion',
+    description="When checked, the outcome is way more realistic than traditional Parallax,\nbut you can expect a performance hit that's worth consideration",
+    default = DEF_PARALLAX_OCCLUSION
 )
 bpy.types.Material.transparencyMode = bpy.props.EnumProperty(
-    name='Mode',
+    name='', # use a row heading for label to reduce dropdown width
     description='How the alpha of this material is to be handled.  No meaning unless exporting PBR materials.',
     items = ((PBRMATERIAL_OPAQUE           , 'Opaque'            , 'Alpha channel is not used.'),
              (PBRMATERIAL_ALPHATEST        , 'Alpha Test'        , 'Pixels are discarded below a certain threshold defined by the alpha cutoff value.'),
              (PBRMATERIAL_ALPHABLEND       , 'Alpha Blend'       , 'Pixels are blended (according to the alpha mode) with\n the already drawn pixels in the current frame buffer.'),
              (PBRMATERIAL_ALPHATESTANDBLEND, 'Alpha Test & Blend', 'Pixels are blended after being higher than the cutoff threshold.')
             ),
-    default = PBRMATERIAL_OPAQUE
+    default = DEF_TANSPARENCY_MODE
 )
 bpy.types.Material.alphaCutOff = bpy.props.FloatProperty(
-    name='Alpha Cutoff',
-    description='The threshold used for Alpha Test and Alpha Test & Blend transparency modes .\nNo meaning unless exporting PBR materials.',
-    default = 0.4, min = 0, max = 1.0
+    name='Transparency Alpha Cutoff',
+    description='The threshold used for Alpha Test and Alpha Test & Blend transparency modes .\nNo meaning unless exporting PBR materials',
+    default = DEF_ALPHA_CUTOFF, min = 0, max = 1.0
 )
 bpy.types.Material.intensityOverride = bpy.props.BoolProperty(
-    name='Override World',
-    description='When checked, use the intensity here, instead of the one in World.',
+    name='Override World Environment Intensity',
+    description='When checked, use the intensity here, instead of the one in World',
     default = False
 )
 bpy.types.Material.environmentIntensity = bpy.props.FloatProperty(
     name='Env. Intensity',
     description='This is the intensity of the environment to be applied to this material.\nNo meaning unless exporting PBR materials.',
-    default = 1.0, min = 0, max = 1.0
+    default = DEF_ENV_INTENSITY, min = 0, max = 1.0
+)
+bpy.types.Material.useHorizonOcclusion = bpy.props.BoolProperty(
+    name='Horizon Occlusion',
+    description='When checked, to prevent normal maps to look shiny when the\nnormal makes the reflect vector face the model (under horizon)',
+    default = DEF_HORIZON_OCCLUSION
+)
+bpy.types.Material.useRadianceOcclusion = bpy.props.BoolProperty(
+    name='Radiance Occlusion',
+    description='When checked, to prevent the radiance to light too much the area relying on ambient texture to define their ambient occlusion',
+    default = DEF_RADIANCE_OCCLUSION
+)
+bpy.types.Material.forceIrradianceInFragment = bpy.props.BoolProperty(
+    name='Irradiance in Fragment',
+    description='When checked, force the shader to compute irradiance in the fragment shader in order to take bump in account',
+    default = DEF_IRADIANCE_IN_FRAG
+)
+bpy.types.Material.useRadianceOverAlpha = bpy.props.BoolProperty(
+    name='Radiance over Alpha',
+    description='When checked, the material will keeps the reflection highlights over a transparent surface\n(only the most luminous ones).  A car glass is a good example of that.\nWhen the street lights reflects on it you can not see what is behind',
+    default = DEF_RADIANCE_OVER_ALPHA
+)
+bpy.types.Material.forceNormalForward = bpy.props.BoolProperty(
+    name='Normals Forward',
+    description='When checked, force normal to face away from face',
+    default = DEF_NORMALS_FORWARD
+)
+bpy.types.Material.enableSpecularAntiAliasing = bpy.props.BoolProperty(
+    name='Specular Anti-Aliasing',
+    description='When checked, specular anti aliasing in the PBR shader',
+    default = DEF_SPECULAR_ANTIALISING
+)
+bpy.types.Material.STDMatOverride = bpy.props.BoolProperty(
+    name='Override as a STD Material',
+    description='When checked, a STD material is generated , not PBR.\nNo meaning unless exporting in PBR.',
+    default = False
 )
 #===============================================================================
 class BJS_PT_MaterialsPanel(bpy.types.Panel):
@@ -474,20 +613,57 @@ class BJS_PT_MaterialsPanel(bpy.types.Panel):
         if  len(mesh.material_slots) >= 1:
             material = mesh.material_slots[index].material
             if material:
-                layout.prop(material, 'backFaceCulling')
-                layout.prop(material, 'checkReadyOnlyOnce')
-                layout.prop(material, 'maxSimultaneousLights')
+                layout.prop(material, 'overloadChannels')
+                layout.row() # just usde for spacing
+
+                row = layout.row()
+                row.prop(material, 'backFaceCulling')
+                row.prop(material, 'twoSidedLighting')
+
+                row = layout.row()
+                row.prop(material, 'disableLighting')
+                row.prop(material, 'maxSimultaneousLights')
+
+                row = layout.row()
+                row.prop(material, 'invertNormalMapX')
+                row.prop(material, 'invertNormalMapY')
+
+                layout.prop(material, 'useObjectSpaceNormalMap')
 
                 box = layout.box()
-                box.label(text='PBR Transparency:')
-                box.prop(material, 'transparencyMode')
+                box.prop(material, 'useParallax')
+                row = box.row()
+                row.enabled = material.useParallax
+                row.prop(material, 'parallaxScaleBias')
+                row.prop(material, 'useParallaxOcclusion')
+
+                box = layout.box()
+                box.label(text='PBR Only Properties:')
+
+                row = box.row(heading='Transparency Mode')
+                row.prop(material, 'transparencyMode')
+
                 row = box.row()
                 row.enabled = material.transparencyMode == PBRMATERIAL_ALPHATEST or material.transparencyMode == PBRMATERIAL_ALPHATESTANDBLEND
                 row.prop(material, 'alphaCutOff')
+                box.row() # just usde for spacing
 
-                box = layout.box()
-                box.label(text='PBR Environment Intensity:')
                 box.prop(material, 'intensityOverride')
                 row = box.row()
                 row.enabled = material.intensityOverride
                 row.prop(material, 'environmentIntensity')
+                box.row() # just usde for spacing
+
+                row = box.row()
+                row.prop(material, 'useHorizonOcclusion')
+                row.prop(material, 'useRadianceOcclusion')
+
+                row = box.row()
+                row.prop(material, 'forceIrradianceInFragment')
+                row.prop(material, 'useRadianceOverAlpha')
+
+                row = box.row()
+                row.prop(material, 'forceNormalForward')
+                row.prop(material, 'enableSpecularAntiAliasing')
+
+                layout.prop(material, 'STDMatOverride')

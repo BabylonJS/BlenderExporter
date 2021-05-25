@@ -7,20 +7,24 @@ from mathutils import Color
 class PrincipledBJSNode(AbstractBJSNode):
     bpyType = 'ShaderNodeBsdfPrincipled'
 
-    def __init__(self, bpyNode, socketName):
-        super().__init__(bpyNode, socketName)
+    def __init__(self, bpyNode, socketName, overloadChannels):
+        super().__init__(bpyNode, socketName, overloadChannels)
 
         input = self.findInput('Base Color')
         defaultDiffuse = self.findTexture(input, DIFFUSE_TEX)
-        if defaultDiffuse is not None:
+
+        # when defaultDiffuse is None, a texture was found;
+        # get color when returned by findTexture, or also when overloading
+        if defaultDiffuse is not None or overloadChannels:
+            defaultDiffuse = self.getDefault('Base Color')
             self.diffuseColor = Color((defaultDiffuse[0], defaultDiffuse[1], defaultDiffuse[2]))
             self.diffuseAlpha = defaultDiffuse[3]
 
         self.mustBakeDiffuse = input.mustBake if isinstance(input, AbstractBJSNode) else False
         # - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - -
-        subsurface = self.findInput('Subsurface')
+        subsurface = self.getDefault('Subsurface')
         # ignoring texture surfaces & must be greater than 0
-        if (not isinstance(subsurface, AbstractBJSNode) and subsurface > 0):
+        if (subsurface > 0):
             input = self.findInput('Subsurface Color')
             # ignoring texture surfaces
             if (not isinstance(input, AbstractBJSNode)):
@@ -75,9 +79,9 @@ class PrincipledBJSNode(AbstractBJSNode):
             self.sheenIntensity = defaultSheenIntensity
             self.sheenColor = Color((defaultSheenColor, defaultSheenColor, defaultSheenColor))
         # - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - -
-        input = self.findInput('Anisotropic')
+        input = self.getDefault('Anisotropic')
         # ignoring texture surfaces & must be greater than 0
-        if (not isinstance(input, AbstractBJSNode) and input > 0):
+        if (input > 0):
             self.anisotropicIntensity = input
         # - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - -
         input = self.findInput('IOR')
@@ -86,6 +90,19 @@ class PrincipledBJSNode(AbstractBJSNode):
             self.indexOfRefraction = defaultIOR
 
         self.mustBakeRefraction = input.mustBake if isinstance(input, AbstractBJSNode) else False
+       # - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - -
+        self.emissiveIntensity = self.getDefault('Emission Strength')
+
+        input = self.findInput('Emission')
+        defaultEmissive = self.findTexture(input, EMMISIVE_TEX)
+
+        # when defaultEmissive is None, a texture was found;
+        # get color when returned by findTexture, or also when overloading
+        if defaultEmissive is not None or overloadChannels:
+            defaultEmissive = self.getDefault('Emission')
+            self.emissiveColor = Color((defaultEmissive[0], defaultEmissive[1], defaultEmissive[2]))
+
+        self.mustBakeEmissive = input.mustBake if isinstance(input, AbstractBJSNode) else False
         # - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - -
         input = self.findInput('Normal')
         self.findTexture(input, BUMP_TEX)

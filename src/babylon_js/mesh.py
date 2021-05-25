@@ -30,10 +30,15 @@ CONE_IMPOSTER = 6
 CYLINDER_IMPOSTER = 7
 PARTICLE_IMPOSTER = 8
 
-SHAPE_KEY_GROUPS_ALLOWED = False
-
 ZERO_V = Vector((0, 0, 0))
 ZERO_Q = Quaternion((1, 0, 0, 0))
+DEF_BILLBOARDMODE = BILLBOARDMODE_NONE
+DEF_DISABLED = False
+DEF_CHECKCOLLISIONS = False
+DEF_RECEIVE_SHADOWS = False
+DEF_CAST_SHADOWS = False
+DEF_IS_PICKABLE = False
+DEF_FREEZE_WORLD_MATRIX = False
 #===============================================================================
 class Mesh(FCurveAnimatable):
     def __init__(self, bpyMesh, scene, exporter):
@@ -51,7 +56,6 @@ class Mesh(FCurveAnimatable):
         self.castShadows = bpyMesh.data.castShadows
         self.billboardMode = bpyMesh.data.billboardMode
         self.freezeWorldMatrix = bpyMesh.data.freezeWorldMatrix
-        self.layer = getLayer(bpyMesh) # used only for lights with 'This Layer Only' checked, not exported
         self.tags = bpyMesh.data.tags
 
         # Constraints
@@ -211,8 +215,7 @@ class Mesh(FCurveAnimatable):
             for block in bpyMesh.data.shape_keys.key_blocks:
                 if (block.name == 'Basis'):
                     hasShapeKeys = len(bpyMesh.data.shape_keys.key_blocks) > 1
-                    keyOrderMap = []
-                    basis = block
+                    orderMap = []
                     break
 
             if not hasShapeKeys:
@@ -386,7 +389,7 @@ class Mesh(FCurveAnimatable):
                             indicesPerVertex.append(matricesIndices)
 
                         if hasShapeKeys:
-                            keyOrderMap.append([vertex_index, len(self.positions)]) # use len positions before it is append to convert from 1 to 0 origin
+                            orderMap.append([vertex_index, len(self.positions)]) # use len positions before it is append to convert from 1 to 0 origin
 
                         vertices_indices[vertex_index].append(index)
 
@@ -430,49 +433,33 @@ class Mesh(FCurveAnimatable):
 
         # shape keys for mesh
         if hasShapeKeys:
-            Mesh.sort(keyOrderMap)
+            Mesh.sort(orderMap)
             self.rawShapeKeys = []
-            self.morphTargetManagerId = randint(0, 1000000) # not used for TOB implementation
-            groupNames = []
+            self.morphTargetManagerId = randint(0, 1000000)
             Logger.log('Shape Keys:', 2)
+            self.hasShapeKeyAnimation = bpyMesh.data.shape_keys.animation_data is not None
+
+            # get current state, so it can be returned to
+            if self.hasShapeKeyAnimation:
+                currentAction = bpyMesh.data.shape_keys.animation_data.action
+                currentFrame = bpy.context.scene.frame_current
+            else:
+                currentAction = None
 
             # process the keys in the .blend
             for block in bpyMesh.data.shape_keys.key_blocks:
                 # perform name format validation, before processing
                 keyName = block.name
 
-                # the Basis shape key is a member of all groups, processed in 2nd pass
+                # the Basis shape key is a member of all groups
                 if keyName == 'Basis': continue
 
-                if keyName.find('-') <= 0 and SHAPE_KEY_GROUPS_ALLOWED:
-                    if bpyMesh.data.defaultShapeKeyGroup != DEFAULT_SHAPE_KEY_GROUP:
-                        keyName = bpyMesh.data.defaultShapeKeyGroup + '-' + keyName
-                    else: continue
+                self.rawShapeKeys.append(RawShapeKey(block, keyName, orderMap, world.positionsPrecision, currentAction, self.name))
 
-                group = None
-                state = keyName
-                if SHAPE_KEY_GROUPS_ALLOWED:
-                    temp = keyName.upper().partition('-')
-                    group = temp[0]
-                    state = temp[2]
-                self.rawShapeKeys.append(RawShapeKey(block, group, state, keyOrderMap, basis, world.positionsPrecision))
+            if self.hasShapeKeyAnimation:
+                bpyMesh.data.shape_keys.animation_data.action = currentAction
+                bpy.context.scene.frame_current = currentFrame
 
-                if SHAPE_KEY_GROUPS_ALLOWED:
-                    # check for a new group, add to groupNames if so
-                    newGroup = True
-                    for group in groupNames:
-                        if temp[0] == group:
-                            newGroup = False
-                            break
-                    if newGroup:
-                       groupNames.append(temp[0])
-
-            # process into ShapeKeyGroups, when rawShapeKeys found and groups allowed (implied)
-            if len(groupNames) > 0:
-                self.shapeKeyGroups = []
-                basis = RawShapeKey(basis, None, 'BASIS', keyOrderMap, basis, world.positionsPrecision)
-                for group in groupNames:
-                    self.shapeKeyGroups.append(ShapeKeyGroup(group,self.rawShapeKeys, basis.vertices, world.positionsPrecision))
 # - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - -
     @staticmethod
     def GetStatsColumns(file_handler):
@@ -622,7 +609,8 @@ class Mesh(FCurveAnimatable):
         if hasattr(self, 'parentId'): write_string(file_handler, 'parentId', self.parentId)
 
         if hasattr(self, 'materialId'): write_string(file_handler, 'materialId', self.materialId)
-        write_int(file_handler, 'billboardMode', self.billboardMode)
+        if self.billboardMode != DEF_BILLBOARDMODE:
+           write_int(file_handler, 'billboardMode', self.billboardMode)
         write_vector(file_handler, 'position', self.position)
 
         if hasattr(self, "rotationQuaternion"):
@@ -631,13 +619,23 @@ class Mesh(FCurveAnimatable):
             write_vector(file_handler, 'rotation', self.rotation)
 
         write_vector(file_handler, 'scaling', self.scaling)
+        if self.freezeWorldMatrix != DEF_FREEZE_WORLD_MATRIX:
+            write_bool(file_handler, 'freezeWorldMatrix', self.freezeWorldMatrix)
+
+        # these 2 are always required by .babylon format, even though default is true
         write_bool(file_handler, 'isVisible', self.isVisible)
-        write_bool(file_handler, 'freezeWorldMatrix', self.freezeWorldMatrix)
         write_bool(file_handler, 'isEnabled', self.isEnabled)
-        write_bool(file_handler, 'checkCollisions', self.checkCollisions)
-        write_bool(file_handler, 'receiveShadows', self.receiveShadows)
+
+        if self.checkCollisions != DEF_CHECKCOLLISIONS:
+            write_bool(file_handler, 'checkCollisions', self.checkCollisions)
+
+        if self.receiveShadows != DEF_RECEIVE_SHADOWS:
+            write_bool(file_handler, 'receiveShadows', self.receiveShadows)
+
         write_bool(file_handler, 'pickable', self.isPickable)
-        write_string(file_handler, 'tags', self.tags)
+
+        if len(self.tags) > 0:
+            write_string(file_handler, 'tags', self.tags)
 
         if hasattr(self, 'physicsImpostor'):
             write_int(file_handler, 'physicsImpostor', self.physicsImpostor)
@@ -718,7 +716,7 @@ class Mesh(FCurveAnimatable):
         first = True
         file_handler.write('{')
         write_int(file_handler, 'id', self.morphTargetManagerId, True)
-        file_handler.write('\n,"targets":[')
+        file_handler.write(',"targets":[')
         for key in self.rawShapeKeys:
             if first == False:
                 file_handler.write(',')
@@ -727,6 +725,68 @@ class Mesh(FCurveAnimatable):
 
             first = False
         file_handler.write(']}')
+#===============================================================================
+    # also get all the unique animation names, to make the groups
+    def write_animation_groups(self, file_handler, first):
+        groupNames = self.getAminGroupNames()
+        for name in groupNames:
+            if first == False:
+                file_handler.write(',')
+
+            file_handler.write('{')
+            write_string(file_handler, 'name', name, True)
+
+            frameRange = self.getAnimGroupFrameRange(name)
+            write_int(file_handler, 'from', frameRange[0])
+            write_int(file_handler, 'to'  , frameRange[1])
+
+            file_handler.write(',"targetedAnimations":[')
+            first2 = True
+            for key in self.rawShapeKeys:
+                for animation in key.animations:
+                    if name == animation.name:
+                        if first2 != True:
+                            file_handler.write(',')
+
+                        first2 = False
+                        file_handler.write('\n{"targetId":"' + key.morphTargetId + '","animation":')
+                        animation.to_json_file(file_handler)
+                        file_handler.write('\n}')
+                        break
+
+            file_handler.write(']}')
+            first = False
+# - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - -
+    def getAminGroupNames(self):
+        ret = []
+        for key in self.rawShapeKeys:
+            # build the list of animation group names
+            for animation in key.animations:
+                name = animation.name
+                isDuplicate = False
+                for animName in ret:
+                    if name == animName:
+                        isDuplicate = True
+
+                if not isDuplicate:
+                    ret.append(name)
+
+        return ret
+# - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - -
+    def getAnimGroupFrameRange(self, grpName):
+        lowest  =  1000000
+        highest = -1000000
+        for key in self.rawShapeKeys:
+            for animation in key.animations:
+                if grpName == animation.name:
+                    if lowest > animation.frames[0]:
+                        lowest = animation.frames[0]
+
+                    lastIdx = len(animation.frames) - 1
+                    if highest < animation.frames[lastIdx]:
+                        highest = animation.frames[lastIdx]
+                    break
+        return [lowest, highest]
 #===============================================================================
 class MeshInstance:
      def __init__(self, instancedMesh, rotation, rotationQuaternion):
@@ -762,8 +822,13 @@ class MeshInstance:
         write_vector(file_handler, 'scaling', self.scaling)
         # freeze World Matrix currently ignored for instances
         write_bool(file_handler, 'freezeWorldMatrix', self.freezeWorldMatrix)
-        write_string(file_handler, 'tags', self.tags)
-        write_bool(file_handler, 'checkCollisions', self.checkCollisions)
+
+        if len(self.tags) > 0:
+            write_string(file_handler, 'tags', self.tags)
+
+        if self.checkCollisions != DEF_CHECKCOLLISIONS:
+            write_bool(file_handler, 'checkCollisions', self.checkCollisions)
+
         write_bool(file_handler, 'pickable', self.isPickable)
 
         if hasattr(self, 'physicsImpostor'):
@@ -792,13 +857,7 @@ class Node(FCurveAnimatable):
             self.rotation = scale_vector(rot.to_euler('XYZ'), -1)
         self.scaling = scale
         self.isVisible = False
-        self.isEnabled = True
-        self.checkCollisions = False
-        self.billboardMode = BILLBOARDMODE_NONE
-        self.castShadows = False
-        self.receiveShadows = False
-        self.tags = ''
-        self.layer = -1 # nodes do not have layers attribute
+        self.isEnabled = not DEF_DISABLED
 # - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - -
     def to_json_file(self, file_handler):
         file_handler.write('{')
@@ -814,10 +873,6 @@ class Node(FCurveAnimatable):
         write_vector(file_handler, 'scaling', self.scaling)
         write_bool(file_handler, 'isVisible', self.isVisible)
         write_bool(file_handler, 'isEnabled', self.isEnabled)
-        write_bool(file_handler, 'checkCollisions', self.checkCollisions)
-        write_int(file_handler, 'billboardMode', self.billboardMode)
-        write_bool(file_handler, 'receiveShadows', self.receiveShadows)
-        write_string(file_handler, 'tags', self.tags)
 
         super().to_json_file(file_handler) # Animations
         file_handler.write('}')
@@ -847,17 +902,17 @@ bpy.types.Mesh.autoAnimate = bpy.props.BoolProperty(
 bpy.types.Mesh.checkCollisions = bpy.props.BoolProperty(
     name='Check Collisions',
     description='Indicates mesh should be checked that it does not run into anything.',
-    default = False
+    default = DEF_CHECKCOLLISIONS
 )
 bpy.types.Mesh.castShadows = bpy.props.BoolProperty(
     name='Cast Shadows',
     description='',
-    default = False
+    default = DEF_CAST_SHADOWS
 )
 bpy.types.Mesh.receiveShadows = bpy.props.BoolProperty(
     name='Receive Shadows',
     description='',
-    default = False
+    default = DEF_RECEIVE_SHADOWS
 )
 bpy.types.Mesh.tags = bpy.props.StringProperty(
     name='Tags',
@@ -887,7 +942,7 @@ bpy.types.Mesh.bakeQuality = bpy.props.IntProperty(
 bpy.types.Mesh.freezeWorldMatrix = bpy.props.BoolProperty(
     name='Freeze World Matrix',
     description='Indicate the position, rotation, & scale do not change for performance reasons',
-    default = False
+    default = DEF_FREEZE_WORLD_MATRIX
 )
 bpy.types.Mesh.attachedSound = bpy.props.StringProperty(
     name='Sound',
@@ -916,7 +971,7 @@ bpy.types.Mesh.ignoreSkeleton = bpy.props.BoolProperty(
 )
 bpy.types.Mesh.maxInfluencers = bpy.props.IntProperty(
     name='Max bone Influencers / Vertex',
-    description='When fewer than this are observed, the lower value is used.',
+    description='When fewer than this are observed, the lower value is used',
     default = 8, min = 1, max = 8
 )
 bpy.types.Mesh.billboardMode = bpy.props.EnumProperty(
@@ -929,17 +984,17 @@ bpy.types.Mesh.billboardMode = bpy.props.EnumProperty(
              (BILLBOARDMODE_Z   , 'Z'   , 'Z dimension should always face the camera.'),
              (BILLBOARDMODE_ALL , 'All' , 'Mesh should always face the camera in all dimensions.')
             ),
-    default = BILLBOARDMODE_NONE
+    default = DEF_BILLBOARDMODE
 )
 bpy.types.Mesh.isPickable = bpy.props.BoolProperty(
     name='Pickable',
-    description='Disable picking for a mesh.',
-    default = True
+    description='Allow picking for a mesh',
+    default = DEF_IS_PICKABLE
 )
 bpy.types.Mesh.disabled = bpy.props.BoolProperty(
     name='Disabled',
-    description='Load mesh disabled, which also disables all children.',
-    default = False
+    description='Load mesh disabled, which also disables all children',
+    default = DEF_DISABLED
 )
 
 #===============================================================================

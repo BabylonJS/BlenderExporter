@@ -34,6 +34,7 @@ class JsonExporter:
         skeletonId = 0
         self.meshesAndNodes = []
         self.morphTargetMngrs = []
+        self.animationGroupers = []
         self.materials = []
         self.multiMaterials = []
         self.sounds = []
@@ -82,7 +83,7 @@ class JsonExporter:
             if scene.camera != None:
                 self.activeCamera = scene.camera.name
             else:
-                Logger.warn('No active camera has been assigned, or is not in a currently selected Blender layer')
+                Logger.warn('No active camera has been assigned, or is not in a currently enabled collection')
 
             # Scene level sound
             if self.settings.attachedSound != '':
@@ -90,7 +91,7 @@ class JsonExporter:
 
             # separate loop doing all skeletons, so available in Mesh to make skipping IK bones possible
             for object in scene.objects:
-                if self.shouldBeCulled(object): continue
+                if shouldBeCulled(object): continue
 
                 scene.frame_set(currentFrame)
                 if object.type == 'ARMATURE':
@@ -102,7 +103,7 @@ class JsonExporter:
 
             # exclude light in this pass, so ShadowGenerator constructor can be passed meshesAnNodes
             for object in scene.objects:
-                if self.shouldBeCulled(object): continue
+                if shouldBeCulled(object): continue
 
                 scene.frame_set(currentFrame)
                 if object.type == 'CAMERA':
@@ -126,10 +127,12 @@ class JsonExporter:
 
                     if hasattr(mesh, 'instances'):
                         self.meshesAndNodes.append(mesh)
-                        if self.settings.writeCsvFile:
-                                mesh.getMeshStats(stats_handler)
-                        if hasattr(mesh, 'morphTargetManagerId'):
-                            self.morphTargetMngrs.append(mesh)
+                    if self.settings.writeCsvFile:
+                            mesh.getMeshStats(stats_handler)
+                    if hasattr(mesh, 'morphTargetManagerId'):
+                        self.morphTargetMngrs.append(mesh)
+                    if hasattr(mesh, 'hasShapeKeyAnimation'):
+                        self.animationGroupers.append(mesh)
 
                     if object.data.attachedSound != '':
                         self.sounds.append(Sound(object.data.attachedSound, object.data.autoPlaySound, object.data.loopSound, object))
@@ -142,16 +145,16 @@ class JsonExporter:
 
             # Lamp / shadow Generator pass; meshesAnNodes complete & forceParents included
             for object in scene.objects:
-                if self.shouldBeCulled(object): continue
+                if shouldBeCulled(object): continue
 
                 if object.type == 'LIGHT':
                     bulb = Light(object, self, self.settings.usePBRMaterials)
                     self.lights.append(bulb)
                     if object.data.shadowMap != 'NONE':
-                        if bulb.light_type == DIRECTIONAL_LIGHT or bulb.light_type == SPOT_LIGHT:
+                        if bulb.light_type != HEMI_LIGHT:
                             self.shadowGenerators.append(ShadowGenerator(object, self.meshesAndNodes, scene))
                         else:
-                            Logger.warn('Only directional (sun) and spot types of lamp are valid for shadows thus ignored: ' + object.name)
+                            Logger.warn('Area lights,which convert to HemisphericLight, do not support shadow, thus ignored: ' + object.name)
 
             bpy.context.scene.frame_set(currentFrame)
 
@@ -180,98 +183,115 @@ class JsonExporter:
         self.world.to_json_file(file_handler, self)
 
         # Materials
-        file_handler.write(',\n"materials":[')
-        first = True
-        for material in self.materials:
-            if first != True:
-                file_handler.write(',\n')
+        if len(self.materials) > 0:
+            file_handler.write(',\n"materials":[')
+            first = True
+            for material in self.materials:
+                if first != True:
+                    file_handler.write(',\n')
 
-            first = False
-            material.to_json_file(file_handler)
-        file_handler.write(']')
+                first = False
+                material.to_json_file(file_handler)
+            file_handler.write(']')
 
         # Multi-materials
-        file_handler.write(',\n"multiMaterials":[')
-        first = True
-        for multimaterial in self.multiMaterials:
-            if first != True:
-                file_handler.write(',')
+        if len(self.multiMaterials) > 0:
+            file_handler.write(',\n"multiMaterials":[')
+            first = True
+            for multimaterial in self.multiMaterials:
+                if first != True:
+                    file_handler.write(',')
 
-            first = False
-            multimaterial.to_json_file(file_handler)
-        file_handler.write(']')
+                first = False
+                multimaterial.to_json_file(file_handler)
+            file_handler.write(']')
 
         # Armatures/Bones
-        file_handler.write(',\n"skeletons":[')
-        first = True
-        for skeleton in self.skeletons:
-            if first != True:
-                file_handler.write(',')
+        if len(self.skeletons) > 0:
+            file_handler.write(',\n"skeletons":[')
+            first = True
+            for skeleton in self.skeletons:
+                if first != True:
+                    file_handler.write(',')
 
-            first = False
-            skeleton.to_json_file(file_handler)
-        file_handler.write(']')
+                first = False
+                skeleton.to_json_file(file_handler)
+            file_handler.write(']')
 
         # Meshes
-        file_handler.write(',\n"meshes":[')
-        first = True
-        for mesh in self.meshesAndNodes:
-            if first != True:
-                file_handler.write(',')
+        if len(self.meshesAndNodes) > 0:
+            file_handler.write(',\n"meshes":[')
+            first = True
+            for mesh in self.meshesAndNodes:
+                if first != True:
+                    file_handler.write(',')
 
-            first = False
-            mesh.to_json_file(file_handler)
-        file_handler.write(']')
+                first = False
+                mesh.to_json_file(file_handler)
+            file_handler.write(']')
 
         # Morph targets
-        file_handler.write(',\n"morphTargetManagers":[')
-        first = True
-        for mesh in self.morphTargetMngrs:
-            if first != True:
-                file_handler.write(',')
+        if len(self.morphTargetMngrs) > 0:
+            file_handler.write(',\n"morphTargetManagers":[')
+            first = True
+            for mesh in self.morphTargetMngrs:
+                if first != True:
+                    file_handler.write(',')
 
-            first = False
-            mesh.write_morphing_file(file_handler)
-        file_handler.write(']')
+                first = False
+                mesh.write_morphing_file(file_handler)
+            file_handler.write(']')
+
+        # Animation Groups
+        if len(self.animationGroupers) > 0:
+            file_handler.write(',\n"animationGroups":[')
+            first = True
+            for grouper in self.animationGroupers:
+                grouper.write_animation_groups(file_handler, first)
+                first = False
+            file_handler.write(']')
 
         # Cameras
-        file_handler.write(',\n"cameras":[')
-        first = True
-        for camera in self.cameras:
-            if hasattr(camera, 'fatalProblem'): continue
-            if first != True:
-                file_handler.write(',')
+        if len(self.cameras) > 0:
+            file_handler.write(',\n"cameras":[')
+            first = True
+            for camera in self.cameras:
+                if hasattr(camera, 'fatalProblem'): continue
+                if first != True:
+                    file_handler.write(',')
 
-            first = False
-            camera.update_for_target_attributes(self.meshesAndNodes)
-            camera.to_json_file(file_handler)
-        file_handler.write(']')
+                first = False
+                camera.update_for_target_attributes(self.meshesAndNodes)
+                camera.to_json_file(file_handler)
+            file_handler.write(']')
 
         # Active camera
         if hasattr(self, 'activeCamera'):
             write_string(file_handler, 'activeCameraID', self.activeCamera)
 
         # Lights
-        file_handler.write(',\n"lights":[')
-        first = True
-        for light in self.lights:
-            if first != True:
-                file_handler.write(',')
+        if len(self.lights) > 0:
+            file_handler.write(',\n"lights":[')
+            first = True
+            for light in self.lights:
+                if first != True:
+                    file_handler.write(',')
 
-            first = False
-            light.to_json_file(file_handler)
-        file_handler.write(']')
+                first = False
+                light.to_json_file(file_handler)
+            file_handler.write(']')
 
         # Shadow generators
-        file_handler.write(',\n"shadowGenerators":[')
-        first = True
-        for shadowGen in self.shadowGenerators:
-            if first != True:
-                file_handler.write(',')
+        if len(self.shadowGenerators) > 0:
+            file_handler.write(',\n"shadowGenerators":[')
+            first = True
+            for shadowGen in self.shadowGenerators:
+                if first != True:
+                    file_handler.write(',')
 
-            first = False
-            shadowGen.to_json_file(file_handler)
-        file_handler.write(']')
+                first = False
+                shadowGen.to_json_file(file_handler)
+            file_handler.write(']')
 
         # Sounds
         if len(self.sounds) > 0:
@@ -331,25 +351,10 @@ class JsonExporter:
         #really cannot happen, will cause exception in caller
         return None
     # - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - -
-    def shouldBeCulled(self, object):
-        collectionName = object.users_collection[0].name
-        return self.collectionExcluded(bpy.context.window.view_layer.layer_collection, collectionName)
-    # - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - -
-    def collectionExcluded(self, viewLayer, collectionName):
-        if collectionName == viewLayer.name:
-            return viewLayer.exclude
-
-        for childViewLayers in viewLayer.children:
-            result = self.collectionExcluded(childViewLayers, collectionName)
-            if result is not None:
-                return result
-
-        return None
-# - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - -
     # only return a parent, when is has not been culled
     def getExportedParent(self, childObject):
         cand = childObject.parent
-        if cand is None or self.shouldBeCulled(cand):
+        if cand is None or shouldBeCulled(cand):
             return None
 
         # lights & cameras must also be visible to be exported, so check if parent a light or camera
