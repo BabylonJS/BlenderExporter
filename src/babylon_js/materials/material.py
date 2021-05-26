@@ -338,8 +338,9 @@ class BJSMaterial:
 
         # properties specific to PBR
         if self.isPBR:
-            if self.transparencyMode != DEF_TANSPARENCY_MODE: write_int(file_handler, 'transparencyMode', self.transparencyMode)
-            if format_f(self.alphaCutOff) != format_f(DEF_ALPHA_CUTOFF): write_float(file_handler, 'alphaCutOff', self.alphaCutOff)
+            # always write transparency & cutoff; they have no default in BJS
+            write_int(file_handler, 'transparencyMode', self.transparencyMode)
+            write_float(file_handler, 'alphaCutOff', self.alphaCutOff)
 
             # source principle node
             if self.bjsNodeTree.metallic is not None or METAL_TEX in self.textures:

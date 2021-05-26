@@ -43,7 +43,6 @@ class RawShapeKey:
             frames = range(frame_start, frame_end + 1) # range is not inclusive with 2nd arg
 
             previousInfluence = -1
-            Logger.log('processing action ' + action.name, 4)
             animation = Animation(ANIMATIONTYPE_FLOAT, ANIMATIONLOOPMODE_CYCLE, action.name, 'influence')
 
             for idx in range(len(frames)):
@@ -56,6 +55,7 @@ class RawShapeKey:
                     animation.values.append(keyBlock.value)
                     previousInfluence = keyBlock.value
 
+            Logger.log('adding action "' + action.name + '":  [' + format_int(animation.get_first_frame()) + ' - ' + format_int(animation.get_last_frame()) + ']', 4)
             self.animations.append(animation)
 
     def partOfAction(self, action):

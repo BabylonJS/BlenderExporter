@@ -222,8 +222,9 @@ class AbstractBJSNode:
         if bpyTypeReqd is not None:
             if not hasattr(value, 'bpyType') or value.bpyType != bpyTypeReqd:
                 return None
-
-        return value
+            
+        if value is not None: return value
+        return self.defaults[socketName]
 
     # called by many sub-classes, when just a color, return the default value to caller
     def findTexture(self, input, textureType):

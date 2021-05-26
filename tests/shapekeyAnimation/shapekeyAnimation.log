@@ -1,4 +1,4 @@
-Exporter version: 2.93-alpha, Blender version: 2.93.0 Beta
+Exporter version: 2.93-beta 1, Blender version: 2.93.0 Beta
 ========= Conversion from Blender to Babylon.js =========
 	Scene settings used :
 		Inline textures     :  true
@@ -24,11 +24,11 @@ Exporter version: 2.93-alpha, Blender version: 2.93.0 Beta
 		num triangles      :  2482
 		Shape Keys:
 			head-open added
-				processing action KeyAction
+				adding action "KeyAction":  [1 - 124]
 			head-wide added
-				processing action KeyAction
+				adding action "KeyAction":  [1 - 124]
 			head-upper added
-				processing action KeyAction
+				adding action "KeyAction":  [1 - 124]
 	processing begun of mesh:  teeth1
 		processing begun of material:  eye_teeth
 			processing texture teeth3_copy
@@ -66,7 +66,6 @@ Exporter version: 2.93-alpha, Blender version: 2.93.0 Beta
 	writing mesh:  teeth1
 	writing mesh:  eye_L
 	writing mesh:  eye_R
-	KeyAction
 ========= Writing of JSON file completed =========
 ========= end of processing =========
-elapsed time:  0 min, 0.54 secs
+elapsed time:  0 min, 0.5765 secs
