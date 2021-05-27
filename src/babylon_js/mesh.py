@@ -609,8 +609,7 @@ class Mesh(FCurveAnimatable):
         if hasattr(self, 'parentId'): write_string(file_handler, 'parentId', self.parentId)
 
         if hasattr(self, 'materialId'): write_string(file_handler, 'materialId', self.materialId)
-        if self.billboardMode != DEF_BILLBOARDMODE:
-           write_int(file_handler, 'billboardMode', self.billboardMode)
+        write_int(file_handler, 'billboardMode', self.billboardMode)
         write_vector(file_handler, 'position', self.position)
 
         if hasattr(self, "rotationQuaternion"):
