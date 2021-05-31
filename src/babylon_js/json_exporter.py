@@ -265,9 +265,9 @@ class JsonExporter:
                 camera.to_json_file(file_handler)
             file_handler.write(']')
 
-        # Active camera
-        if hasattr(self, 'activeCamera'):
-            write_string(file_handler, 'activeCameraID', self.activeCamera)
+            # Active camera
+            if hasattr(self, 'activeCamera'):
+                write_string(file_handler, 'activeCameraID', self.activeCamera)
 
         # Lights
         if len(self.lights) > 0:
