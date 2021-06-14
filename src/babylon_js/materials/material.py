@@ -174,6 +174,7 @@ class BJSMaterial:
             uv.active_render = not forceBaking # want the other uv's for the source when combining
 
             bpy.ops.uv.smart_project(area_weight = 1.0, scale_to_bounds = True)
+            bpyMesh.update_from_editmode()
 
             # syntax for using unwrap enstead of smart project
 #            bpy.ops.uv.unwrap(margin = 1.0) # defaulting on all

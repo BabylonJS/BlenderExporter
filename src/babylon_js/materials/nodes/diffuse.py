@@ -18,6 +18,6 @@ class DiffuseBJSNode(AbstractBJSNode):
         if defaultColor is not None or overloadChannels:
             defaultColor = self.getDefault('Color')
             self.diffuseColor = Color((defaultColor[0], defaultColor[1], defaultColor[2]))
-            self.diffuseAlpha = defaultDiffuse[3]
+            self.diffuseAlpha = defaultColor[3]
 
         self.mustBakeDiffuse = input.mustBake if isinstance(input, AbstractBJSNode) else False

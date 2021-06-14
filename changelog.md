@@ -1,5 +1,12 @@
 # Blender2Babylon add-on changelog
 
+## Blender 2.93.1 ##
+* 14 June 2022
+
+* Fixed a typo in Diffuse Node
+* Problem baking without a UV
+
+
 ## Blender 2.93.0 ##
 * 31 May 2022
 
