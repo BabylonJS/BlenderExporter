@@ -13,6 +13,7 @@ class RawShapeKey:
         self.precision = precision
         self.influence = keyBlock.value
         self.vertices = []
+        self.animations = []
 
         retSz = len(keyOrderMap)
         for i in range(retSz):
@@ -29,7 +30,6 @@ class RawShapeKey:
 # - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - -
     def processActions(self, keyBlock, currentAction):
         currentActionOnly = bpy.context.scene.world.currentActionOnly
-        self.animations = []
         for action in bpy.data.actions:
 
             if currentActionOnly and currentAction.name != action.name:

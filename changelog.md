@@ -1,5 +1,10 @@
 # Blender2Babylon add-on changelog
 
+## Blender 2.93.2 ##
+* 14 July 2022
+
+* Fixed exception when there are shapekeys, but no animation
+
 ## Blender 2.93.1 ##
 * 14 June 2022
 
@@ -23,7 +28,7 @@
     * Support for Parallax and it's scale bias, & occlusion
     * Added PBR specific custom properties for Horizon Occlusion, Radiance Occlusion, Irradiance In Fragment, Radiance Over Alpha, Normals Forward, & Specular Anti-Aliasing
     * Added custom property to allow mixing STD materials in a PBR export via a STD material override
-    * Discontinued Check Only Once custom property 
+    * Discontinued Check Only Once custom property
 
 ## Blender 2.80.1 ##
 * 18 January 2021
