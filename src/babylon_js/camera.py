@@ -40,8 +40,8 @@ class Camera(FCurveAnimatable):
         self.define_animations(bpyCamera, True, True, False, math.pi / 2)
         self.position = bpyCamera.location
 
-        # for quaternions, convert to euler XYZ, otherwise, use the default rotation_euler
-        eul = bpyCamera.rotation_quaternion.to_euler("XYZ") if bpyCamera.rotation_mode == 'QUATERNION' else bpyCamera.rotation_euler
+        # for quaternions, convert to euler YXZ, otherwise, use the default rotation_euler
+        eul = bpyCamera.rotation_quaternion.to_euler("YXZ") if bpyCamera.rotation_mode == 'QUATERNION' else bpyCamera.rotation_euler
         self.rotation = mathutils.Vector((-eul[0] + math.pi / 2, eul[1], -eul[2]))
 
         self.fov = bpyCamera.data.angle

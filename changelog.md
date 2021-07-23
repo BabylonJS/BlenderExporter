@@ -1,5 +1,10 @@
 # Blender2Babylon add-on changelog
 
+## Blender 2.93.3 ##
+* 23 July 2022
+
+* When converting a local matrix into a rotation, change the order from 'XYZ' to 'YXZ'
+
 ## Blender 2.93.2 ##
 * 14 July 2022
 

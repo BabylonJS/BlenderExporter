@@ -94,7 +94,7 @@ class Mesh(FCurveAnimatable):
         if bpyMesh.rotation_mode == 'QUATERNION':
             self.rotationQuaternion = rot
         else:
-            self.rotation = scale_vector(rot.to_euler('XYZ'), -1)
+            self.rotation = scale_vector(rot.to_euler('YXZ'), -1)
         self.scaling = scale
 
         # ensure no unapplied rotation or scale, when there is an armature
@@ -136,7 +136,7 @@ class Mesh(FCurveAnimatable):
                 instRot = None
                 instRotq = rot
             else:
-                instRot = scale_vector(rot.to_euler('XYZ'), -1)
+                instRot = scale_vector(rot.to_euler('YXZ'), -1)
                 instRotq = None
 
             instance = MeshInstance(self, instRot, instRotq)
@@ -853,7 +853,7 @@ class Node(FCurveAnimatable):
         if node.rotation_mode == 'QUATERNION':
             self.rotationQuaternion = rot
         else:
-            self.rotation = scale_vector(rot.to_euler('XYZ'), -1)
+            self.rotation = scale_vector(rot.to_euler('YXZ'), -1)
         self.scaling = scale
         self.isVisible = False
         self.isEnabled = not DEF_DISABLED

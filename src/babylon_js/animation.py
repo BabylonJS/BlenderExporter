@@ -174,5 +174,5 @@ class QuaternionToEulerAnimation(Animation):
 # - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - -
     def get_attr(self, object):
         quat = getattr(object, self.attrInBlender)
-        eul  = quat.to_euler("XYZ")
+        eul  = quat.to_euler("YXZ")
         return scale_vector(eul, self.mult, self.xOffset)
