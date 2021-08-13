@@ -52,6 +52,11 @@ class JsonMain(bpy.types.Operator, ExportHelper):
 
     filepath: bpy.props.StringProperty(subtype = 'FILE_PATH') # assigned once the file selector returns
     filter_glob: bpy.props.StringProperty(name='.babylon',default='*.babylon', options={'HIDDEN'})
+    export_selected: bpy.props.BoolProperty(
+        name='Export only selected objects',
+        description='Export only the currently selected objects',
+        default=False
+    )
 
     def execute(self, context):
         from .json_exporter import JsonExporter
@@ -62,7 +67,8 @@ class JsonMain(bpy.types.Operator, ExportHelper):
             return {'FINISHED'}
 
         exporter = JsonExporter()
-        exporter.execute(context, self.filepath)
+        objects = bpy.context.selected_objects if self.export_selected else bpy.context.scene.objects
+        exporter.execute(context, self.filepath, objects)
 
         if (exporter.fatalError):
             self.report({'ERROR'}, exporter.fatalError)
@@ -80,6 +86,7 @@ class JsonMain(bpy.types.Operator, ExportHelper):
             text='Find export settings in the properties panels',
             icon='INFO'
         )
+        self.layout.prop(self, 'export_selected')
 #===============================================================================
 # The list of classes which sub-class a Blender class, which needs to be registered
 from . import camera
