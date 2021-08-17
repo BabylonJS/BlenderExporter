@@ -21,7 +21,7 @@ import calendar
 class JsonExporter:
     nameSpace   = None  # assigned in execute
 # - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - -
-    def execute(self, context, filepath):
+    def execute(self, context, filepath, objects):
         scene = context.scene
         self.scene = scene # reference for passing
         self.settings = scene.world
@@ -90,7 +90,7 @@ class JsonExporter:
                 self.sounds.append(Sound(self.settings.attachedSound, self.settings.autoPlaySound, self.settings.loopSound))
 
             # separate loop doing all skeletons, so available in Mesh to make skipping IK bones possible
-            for object in scene.objects:
+            for object in objects:
                 if shouldBeCulled(object): continue
 
                 scene.frame_set(currentFrame)
@@ -102,7 +102,7 @@ class JsonExporter:
                         Logger.warn('The following armature not visible in scene thus ignored: ' + object.name)
 
             # exclude light in this pass, so ShadowGenerator constructor can be passed meshesAnNodes
-            for object in scene.objects:
+            for object in objects:
                 if shouldBeCulled(object): continue
 
                 scene.frame_set(currentFrame)
@@ -144,7 +144,7 @@ class JsonExporter:
                     Logger.warn('The following object (type - ' +  object.type + ') is not currently exportable thus ignored: ' + object.name)
 
             # Lamp / shadow Generator pass; meshesAnNodes complete & forceParents included
-            for object in scene.objects:
+            for object in objects:
                 if shouldBeCulled(object): continue
 
                 if object.type == 'LIGHT':
