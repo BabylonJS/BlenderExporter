@@ -1,7 +1,7 @@
 bl_info = {
     'name': 'Babylon.js',
     'author': 'David Catuhe, Jeff Palmer',
-    'version': (2, 93, 3),
+    'version': (2, 93, 4),
     'blender': (2, 93, 0),
     'location': 'File > Export > Babylon.js (.babylon)',
     'description': 'Export Babylon.js scenes (.babylon)',
@@ -83,8 +83,7 @@ class JsonMain(bpy.types.Operator, ExportHelper):
 
     def draw(self, context):
         self.layout.label(
-            text='Find export settings in the properties panels',
-            icon='INFO'
+            text='Other export settings in properties panels'
         )
         self.layout.prop(self, 'export_selected')
 #===============================================================================

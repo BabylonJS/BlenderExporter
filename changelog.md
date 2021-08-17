@@ -1,5 +1,10 @@
 # Blender2Babylon add-on changelog
 
+## Blender 2.93.4 ##
+* 17 August 2022
+
+* Added check box to Export Dialog box to only export the current selection.  Stated use case is to export objects in individual files via script. From @ghempton.
+
 ## Blender 2.93.3 ##
 * 23 July 2022
 
