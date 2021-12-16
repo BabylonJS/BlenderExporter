@@ -172,7 +172,7 @@ class ShadowGenerator:
         # .babylon specific section
         self.shadowCasters = []
         for mesh in meshesAndNodes:
-            if (mesh.castShadows):
+            if (hasattr(mesh, 'castShadows') and mesh.castShadows):
                 self.shadowCasters.append(mesh.name)
 # - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - -
     def to_json_file(self, file_handler):
