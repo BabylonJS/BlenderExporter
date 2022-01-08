@@ -1,29 +1,35 @@
 # Blender2Babylon add-on changelog
 
+## Blender 2.93.5 ##
+* 08 January 2022
+
+* Changed to local position & scale when getting animation for things which are parented
+* Fixed "ShadowGenerator errors on nodes without castShadow attribute" by griga
+
 ## Blender 2.93.4 ##
-* 17 August 2022
+* 17 August 2021
 
 * Added check box to Export Dialog box to only export the current selection.  Stated use case is to export objects in individual files via script. From @ghempton.
 
 ## Blender 2.93.3 ##
-* 23 July 2022
+* 23 July 2021
 
 * When converting a local matrix into a rotation, change the order from 'XYZ' to 'YXZ'
 
 ## Blender 2.93.2 ##
-* 14 July 2022
+* 14 July 2021
 
 * Fixed exception when there are shapekeys, but no animation
 
 ## Blender 2.93.1 ##
-* 14 June 2022
+* 14 June 2021
 
 * Fixed a typo in Diffuse Node
 * Problem baking without a UV
 
 
 ## Blender 2.93.0 ##
-* 31 May 2022
+* 31 May 2021
 
 * Changes for API changes in Blender 2.93
 * Shape Key animation added

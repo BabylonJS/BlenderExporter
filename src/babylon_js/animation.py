@@ -109,6 +109,7 @@ class Animation:
         # action already assigned, always using poses, not every frame, build up again filtering by attrInBlender
         for idx in range(len(animationRange.frames_in)):
             bpy.context.scene.frame_set(animationRange.frames_in[idx])
+            bpy.context.view_layer.update() # insure localmatrices updated
 
             self.frames.append(animationRange.frames_out[idx])
             self.values.append(self.get_attr(object))
@@ -125,7 +126,7 @@ class Animation:
 # - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - -
     def to_json_file(self, file_handler):
         precision = bpy.context.scene.world.positionsPrecision if self.propertyInBabylon == 'position' else FLOAT_PRECISION_DEFAULT
-        file_handler.write('{')
+        file_handler.write('\n{')
         write_string(file_handler, 'name', self.name, True)
         write_string(file_handler, 'property', self.propertyInBabylon)
         write_int(file_handler, 'dataType', self.dataType)
@@ -159,7 +160,19 @@ class VectorAnimation(Animation):
         super().__init__(ANIMATIONTYPE_VECTOR3, ANIMATIONLOOPMODE_CYCLE, propertyInBabylon + ' animation', propertyInBabylon, attrInBlender, mult, xOffset)
 # - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - -
     def get_attr(self, object):
-        return scale_vector(getattr(object, self.attrInBlender), self.mult, self.xOffset)
+        hasParent = object.parent is not None
+        globalValue = getattr(object, self.attrInBlender) # sure this is updated
+        loc, rot, scale = object.matrix_local.decompose() # may not be updated, but need when a parent
+        
+        if self.attrInBlender == 'location':
+            value = loc if hasParent else globalValue
+            
+        elif self.attrInBlender == 'rotation_euler':
+            value = globalValue
+        else:
+            value = scale if hasParent else globalValue
+
+        return scale_vector(value, self.mult, self.xOffset)
 #===============================================================================
 class QuaternionAnimation(Animation):
     def __init__(self, object, propertyInBabylon, attrInBlender, mult = 1, xOffset = 0):

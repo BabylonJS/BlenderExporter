@@ -96,7 +96,7 @@ class FCurveAnimatable:
                 first = False
             file_handler.write(']')
 
-            file_handler.write(',"ranges":[')
+            file_handler.write('\n,"ranges":[')
             first = True
             for range in self.ranges:
                 if first != True:

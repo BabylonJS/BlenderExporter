@@ -22,7 +22,7 @@ DEF_OBJECT_SPACE_NORMAL_MAP = False
 DEF_PARALLAX = False
 DEF_PARALLAX_SCALE_BIAS = 0.05
 DEF_PARALLAX_OCCLUSION = False
-DEF_TANSPARENCY_MODE = PBRMATERIAL_OPAQUE
+DEF_TRANSPARENCY_MODE = PBRMATERIAL_OPAQUE
 DEF_ALPHA_CUTOFF = 0.4
 DEF_ENV_INTENSITY = 1.0
 DEF_HORIZON_OCCLUSION = True
@@ -313,8 +313,8 @@ class BJSMaterial:
         if EMMISIVE_TEX in self.textures:
             if self.bjsNodeTree.emissiveColor is None or same_color(self.bjsNodeTree.emissiveColor, Color((0, 0, 0))):
                 self.bjsNodeTree.emissiveColor = Color((1, 1, 1))
-            
-        # source emissive node    
+
+        # source emissive node
         if self.bjsNodeTree.emissiveColor is not None:
             write_color(file_handler, 'emissive', self.bjsNodeTree.emissiveColor)
 
@@ -547,7 +547,7 @@ bpy.types.Material.transparencyMode = bpy.props.EnumProperty(
              (PBRMATERIAL_ALPHABLEND       , 'Alpha Blend'       , 'Pixels are blended (according to the alpha mode) with\n the already drawn pixels in the current frame buffer.'),
              (PBRMATERIAL_ALPHATESTANDBLEND, 'Alpha Test & Blend', 'Pixels are blended after being higher than the cutoff threshold.')
             ),
-    default = DEF_TANSPARENCY_MODE
+    default = DEF_TRANSPARENCY_MODE
 )
 bpy.types.Material.alphaCutOff = bpy.props.FloatProperty(
     name='Transparency Alpha Cutoff',
