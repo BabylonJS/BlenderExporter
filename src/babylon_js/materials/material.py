@@ -12,6 +12,8 @@ PBRMATERIAL_ALPHABLEND = '2'
 PBRMATERIAL_ALPHATESTANDBLEND  = '3'
 
 # BJS defaults for both setting initial value of property, and reduce output if final value same as default
+DEF_ALPHA = 1.0
+DEF_FREEZE = False
 DEF_CULLING = True
 DEF_2_SIDED_LIGHTING = False
 DEF_MAX_LIGHTS = 4
@@ -34,6 +36,9 @@ DEF_SPECULAR_ANTIALISING = False
 
 DEF_EMISSIVE_INTENSITY = 1.0
 
+DEF_IRIDESCENCE_INTENSITY = 0
+DEF_IRIDESCENCE_MIN_THICKNESS = 0
+DEF_IRIDESCENCE_MAX_THICKNESS = 0
 #===============================================================================
 class MultiMaterial:
     def __init__(self, material_slots, idx, nameSpace):
@@ -74,6 +79,7 @@ class BJSMaterial:
         self.invertNormalMapX = mat.invertNormalMapX
         self.invertNormalMapY = mat.invertNormalMapY
         self.useObjectSpaceNormalMap = mat.useObjectSpaceNormalMap
+        self.freeze = mat.freeze
         self.useParallax = mat.useParallax
         self.parallaxScaleBias = mat.parallaxScaleBias
         self.useParallaxOcclusion = mat.useParallaxOcclusion
@@ -88,6 +94,9 @@ class BJSMaterial:
         self.useRadianceOverAlpha = mat.useRadianceOverAlpha
         self.forceNormalForward = mat.forceNormalForward
         self.enableSpecularAntiAliasing = mat.enableSpecularAntiAliasing
+        self.iridescenceIntensity = mat.iridescenceIntensity
+        self.iridescenceMinThickness = mat.iridescenceMinThickness
+        self.iridescenceMaxThickness = mat.iridescenceMaxThickness
         self.STDMatOverride = mat.STDMatOverride
 
         self.isPBR = exporter.settings.usePBRMaterials and not self.STDMatOverride
@@ -142,14 +151,8 @@ class BJSMaterial:
         engineHold = render.engine
         render.engine = 'CYCLES'
 
-        tileXHold = render.tile_x
-        tileYHold = render.tile_y
-        render.tile_x = bakeSize
-        render.tile_y = bakeSize
-
         usePassIndirectHold = render.bake.use_pass_indirect
         usePassDirectHold   = render.bake.use_pass_direct
-        print('usePassDirectHold  ' + str(usePassDirectHold))
         render.bake.use_pass_indirect = False
         render.bake.use_pass_direct   = False
 
@@ -225,8 +228,6 @@ class BJSMaterial:
         # restore settings
         scene.cycles.device = deviceHold
         render.engine = engineHold
-        render.tile_x = tileXHold
-        render.tile_y = tileYHold
         render.bake.use_pass_indirect = usePassIndirectHold
         render.bake.use_pass_direct   = usePassDirectHold
         render.bake.use_pass_indirect = False
@@ -283,7 +284,17 @@ class BJSMaterial:
             if self.forceIrradianceInFragment != DEF_IRADIANCE_IN_FRAG    : write_bool(file_handler, 'forceIrradianceInFragment', self.forceIrradianceInFragment)
             if self.useRadianceOverAlpha != DEF_RADIANCE_OVER_ALPHA       : write_bool(file_handler, 'useRadianceOverAlpha', self.useRadianceOverAlpha)
             if self.forceNormalForward != DEF_NORMALS_FORWARD             : write_bool(file_handler, 'forceNormalForward', self.forceNormalForward)
-            if self.enableSpecularAntiAliasing != DEF_SPECULAR_ANTIALISING: write_bool(file_handler, 'useRadianceOverAlpha', self.enableSpecularAntiAliasing)
+            if self.enableSpecularAntiAliasing != DEF_SPECULAR_ANTIALISING: write_bool(file_handler, 'enableSpecularAntiAliasing', self.enableSpecularAntiAliasing)
+
+            if self.iridescenceIntensity > 0:
+                file_handler.write(',"iridescence":{')
+                write_bool(file_handler, 'isEnabled', True, True)
+                if self.iridescenceIntensity < 1: write_float(file_handler, 'intensity', self.iridescenceIntensity)
+                if self.iridescenceMinThickness > 0: write_float(file_handler, 'minimumThickness', self.iridescenceMinThickness)
+                if self.iridescenceMaxThickness > 0: write_float(file_handler, 'maximumThickness', self.iridescenceMaxThickness)
+                if self.bjsNodeTree.indexOfRefraction is not None:
+                    write_float(file_handler, 'indexOfRefraction', self.bjsNodeTree.indexOfRefraction)
+                file_handler.write('}')
 
         if not self.use_nodes:
             propName = 'albedo' if self.isPBR else 'diffuse'
@@ -310,7 +321,7 @@ class BJSMaterial:
             write_color(file_handler, 'ambient', self.bjsNodeTree.ambientColor)
 
         # use white for emmissive color when there is a texture, but no color or explicitly black due to overload
-        if EMMISIVE_TEX in self.textures:
+        if EMMISIVE_TEX in self.textures and self.bjsNodeTree.emissiveColor is None:
             if self.bjsNodeTree.emissiveColor is None or same_color(self.bjsNodeTree.emissiveColor, Color((0, 0, 0))):
                 self.bjsNodeTree.emissiveColor = Color((1, 1, 1))
 
@@ -335,13 +346,12 @@ class BJSMaterial:
 
         # sources diffuse, transparency & principled nodes
         alpha = self.bjsNodeTree.diffuseAlpha if self.bjsNodeTree.diffuseAlpha is not None else 1.0
-        write_float(file_handler, 'alpha', alpha)
+        if alpha != DEF_ALPHA: write_float(file_handler, 'alpha', alpha)
 
         # properties specific to PBR
         if self.isPBR:
-            # always write transparency & cutoff; they have no default in BJS
-            write_int(file_handler, 'transparencyMode', self.transparencyMode)
-            write_float(file_handler, 'alphaCutOff', self.alphaCutOff)
+            if self.transparencyMode != DEF_TRANSPARENCY_MODE: write_int(file_handler, 'transparencyMode', self.transparencyMode)
+            if not same_number(self.alphaCutOff, DEF_ALPHA_CUTOFF): write_float(file_handler, 'alphaCutOff', self.alphaCutOff)
 
             # source principle node
             if self.bjsNodeTree.metallic is not None or METAL_TEX in self.textures:
@@ -468,6 +478,8 @@ class BJSMaterial:
         else:
             if METAL_TEX in self.textures or ROUGHNESS_TEX in self.textures:
                 Logger.warn('Metal / roughness texture detected, but no meaning outside of PBR, ignored', 3)
+
+        if self.freeze != DEF_FREEZE : write_bool(file_handler,'checkReadyOnlyOnce', self.freeze)
         file_handler.write('}')
 # - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - -
     @staticmethod
@@ -513,6 +525,11 @@ bpy.types.Material.invertNormalMapX = bpy.props.BoolProperty(
     name='Invert Normals X',
     description='When checked, x component of normal map value will invert (x = 1.0 - x)',
     default = DEF_INV_NORMALS_X
+)
+bpy.types.Material.freeze = bpy.props.BoolProperty(
+    name='Freeze',
+    description='When checked, Material freeze is executed, same as checkReadyOnlyOnce',
+    default = DEF_FREEZE
 )
 bpy.types.Material.invertNormalMapY = bpy.props.BoolProperty(
     name='Invert Normals Y',
@@ -594,6 +611,21 @@ bpy.types.Material.enableSpecularAntiAliasing = bpy.props.BoolProperty(
     description='When checked, specular anti aliasing in the PBR shader',
     default = DEF_SPECULAR_ANTIALISING
 )
+bpy.types.Material.iridescenceIntensity = bpy.props.FloatProperty(
+    name='Intensity',
+    description='To turn on, make greater than 0',
+    default = DEF_IRIDESCENCE_INTENSITY, min = 0, max = 1.0
+)
+bpy.types.Material.iridescenceMinThickness = bpy.props.FloatProperty(
+    name='Min Thickness',
+    description='in nanometers',
+    default = DEF_IRIDESCENCE_MIN_THICKNESS, min = 0
+)
+bpy.types.Material.iridescenceMaxThickness = bpy.props.FloatProperty(
+    name='Max Thickness',
+    description='in nanometers',
+    default = DEF_IRIDESCENCE_MAX_THICKNESS, min = 0
+)
 bpy.types.Material.STDMatOverride = bpy.props.BoolProperty(
     name='Override as a STD Material',
     description='When checked, a STD material is generated , not PBR.\nNo meaning unless exporting in PBR.',
@@ -630,7 +662,9 @@ class BJS_PT_MaterialsPanel(bpy.types.Panel):
                 row.prop(material, 'invertNormalMapX')
                 row.prop(material, 'invertNormalMapY')
 
-                layout.prop(material, 'useObjectSpaceNormalMap')
+                row = layout.row()
+                row.prop(material, 'useObjectSpaceNormalMap')
+                row.prop(material, 'freeze')
 
                 box = layout.box()
                 box.prop(material, 'useParallax')
@@ -667,5 +701,17 @@ class BJS_PT_MaterialsPanel(bpy.types.Panel):
                 row = box.row()
                 row.prop(material, 'forceNormalForward')
                 row.prop(material, 'enableSpecularAntiAliasing')
+
+                box = box.box()
+                box.label(text='Iridescence:')
+
+                row = box.row()
+                row.prop(material, 'iridescenceIntensity')
+
+                row = box.row()
+                row.enabled = material.iridescenceIntensity > 0
+                row.prop(material, 'iridescenceMinThickness')
+                row.prop(material, 'iridescenceMaxThickness')
+
 
                 layout.prop(material, 'STDMatOverride')

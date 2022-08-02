@@ -29,7 +29,7 @@ def format_exporter_version(bl_info = None):
 def verify_min_blender_version():
     # required version string in addon changed format in 2.83
     reqd = get_bl_info()['blender']
-    
+
     # reqd in form of '(2, 80, 0)' since 2.80
     return bpy.app.version >= reqd
 
@@ -276,6 +276,12 @@ def same_array(arrayA, arrayB, precision = FLOAT_PRECISION_DEFAULT):
         if format_float(arrayA[i], fmt) != format_float(arrayB[i], fmt) : return False
 
     return True
+# - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - -
+def same_number(numberA, numberB, precision = FLOAT_PRECISION_DEFAULT):
+    if numberA is None or numberB is None: return False
+
+    fmt = '%.' + str(precision) + 'f'
+    return format_float(numberA, fmt) == format_float(numberB, fmt) 
 # - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - -
 def shouldBeCulled(object):
     collectionName = object.users_collection[0].name

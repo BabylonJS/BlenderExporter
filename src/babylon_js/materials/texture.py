@@ -12,12 +12,12 @@ from shutil import copy
 from sys import exc_info # for writing errors to log file
 
 # used externally by TextureImageBJSNode, defined in BABYLON.Texture
-CLAMP_ADDRESSMODE = 0
+CLAMP_ADDRESSMODE = 0 # default
 WRAP_ADDRESSMODE = 1
 #MIRROR_ADDRESSMODE = 2
 
 # used externally by TextureImageBJSNode, defined in BABYLON.Texture
-EXPLICIT_MODE = 0
+EXPLICIT_MODE = 0 # default
 #SPHERICAL_MODE = 1
 #PLANAR_MODE = 2
 CUBIC_MODE = 3
@@ -25,6 +25,15 @@ CUBIC_MODE = 3
 #SKYBOX_MODE = 5
 
 NON_ALPHA_FORMATS = {'BMP', 'JPEG'}
+
+# defaults
+U_OFFSET = 0
+V_OFFSET = 0
+U_SCALE  = 1
+V_SCALE  = 1
+U_ANG    = 0
+V_ANG    = 0
+W_ANG    = 0
 #===============================================================================
 class Texture:
     # called in constructor for BakeTexture, but for BJSImageTexture, called in Mesh, after ruling out will be baked
@@ -83,7 +92,6 @@ class Texture:
             if not self.uvMapName or self.uvMapName == UV_ACTIVE_TEXTURE:  # only for image based & no node specifying
                 self.uvMapName = bpyMesh.data.uv_layers.active.name
 
-            Logger.log('texture type:  ' + self.textureType + ', mapped using: "' + self.uvMapName + '"', 4)
             if bpyMesh.data.uv_layers[0].name == self.uvMapName:
                 self.coordinatesIndex = 0
             elif bpyMesh.data.uv_layers[1].name == self.uvMapName:
@@ -96,19 +104,23 @@ class Texture:
         file_handler.write(', \n"' + self.textureType + '":{')
         write_string(file_handler, 'name', self.fileNoPath, True)
 
-        write_float(file_handler, 'level', self.level)
         write_bool(file_handler, 'hasAlpha', self.hasAlpha)
+        write_float(file_handler, 'level', self.level)
+
         write_int(file_handler, 'coordinatesMode', self.coordinatesMode)
-        write_float(file_handler, 'uOffset', self.uOffset)
-        write_float(file_handler, 'vOffset', self.vOffset)
-        write_float(file_handler, 'uScale', self.uScale)
-        write_float(file_handler, 'vScale', self.vScale)
-        write_float(file_handler, 'uAng', self.uAng)
-        write_float(file_handler, 'vAng', self.vAng)
-        write_float(file_handler, 'wAng', self.wAng)
-        write_int(file_handler, 'wrapU', self.wrapU)
-        write_int(file_handler, 'wrapV', self.wrapV)
         write_int(file_handler, 'coordinatesIndex', self.coordinatesIndex)
+
+        if not same_number(self.uOffset, U_OFFSET): write_float(file_handler, 'uOffset', self.uOffset)
+        if not same_number(self.vOffset, V_OFFSET): write_float(file_handler, 'vOffset', self.vOffset)
+        if not same_number(self.uScale , U_SCALE ): write_float(file_handler, 'uScale', self.uScale)
+        if not same_number(self.vScale , V_SCALE ): write_float(file_handler, 'vScale', self.vScale)
+        if not same_number(self.uAng   , U_ANG   ): write_float(file_handler, 'uAng', self.uAng)
+        if not same_number(self.vAng   , V_ANG   ): write_float(file_handler, 'vAng', self.vAng)
+        if not same_number(self.wAng   , W_ANG   ): write_float(file_handler, 'wAng', self.wAng)
+
+        if not same_number(self.wrapU, CLAMP_ADDRESSMODE): write_int(file_handler, 'wrapU', self.wrapU)
+        if not same_number(self.wrapV, CLAMP_ADDRESSMODE): write_int(file_handler, 'wrapV', self.wrapV)
+        
         if hasattr(self,'encoded_URI'):
             write_string(file_handler, 'base64String', self.encoded_URI)
         file_handler.write('}')
@@ -124,13 +136,13 @@ class BakedTexture(Texture):
         self.level = 1
         self.coordinatesMode = EXPLICIT_MODE
 
-        self.uOffset = 0
-        self.vOffset = 0
-        self.uScale  = 1
-        self.vScale  = 1
-        self.uAng    = 0
-        self.vAng    = 0
-        self.wAng    = 0
+        self.uOffset = U_OFFSET
+        self.vOffset = V_OFFSET
+        self.uScale  = U_SCALE
+        self.vScale  = V_SCALE
+        self.uAng    = U_ANG
+        self.vAng    = V_ANG
+        self.wAng    = W_ANG
 
         self.wrapU = CLAMP_ADDRESSMODE
         self.wrapV = CLAMP_ADDRESSMODE
@@ -169,13 +181,13 @@ class BJSImageTexture(Texture):
             self.vAng    = mappingNode.ang.y
             self.wAng    = mappingNode.ang.z
         else:
-            self.uOffset = 0
-            self.vOffset = 0
-            self.uScale  = 1
-            self.vScale  = 1
-            self.uAng    = 0
-            self.vAng    = 0
-            self.wAng    = 0
+            self.uOffset = U_OFFSET
+            self.vOffset = V_OFFSET
+            self.uScale  = U_SCALE
+            self.vScale  = V_SCALE
+            self.uAng    = U_ANG
+            self.vAng    = V_ANG
+            self.wAng    = W_ANG
 # - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - -
     # The type is determined later by the node that has the output of the node passed in the constructor
     def assignChannel(self, textureType):
