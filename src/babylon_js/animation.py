@@ -1,5 +1,6 @@
 from .logging import *
 from .package_level import *
+import math
 
 import bpy
 
@@ -66,7 +67,7 @@ class AnimationRange:
             frames = dict()
             for fcurve in object.animation_data.action.fcurves:
                 for key in fcurve.keyframe_points:
-                    frame = key.co.x
+                    frame = math.trunc(key.co.x)
                     frames[frame] = True
 
             frames = sorted(frames)
@@ -108,6 +109,7 @@ class Animation:
     def append_range(self, object, animationRange):
         # action already assigned, always using poses, not every frame, build up again filtering by attrInBlender
         for idx in range(len(animationRange.frames_in)):
+            print('idx: ' + str(idx) + ', value: ' + str(animationRange.frames_in[idx]))
             bpy.context.scene.frame_set(animationRange.frames_in[idx])
             bpy.context.view_layer.update() # insure localmatrices updated
 

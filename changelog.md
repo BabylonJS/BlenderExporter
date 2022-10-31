@@ -1,5 +1,10 @@
 # Blender2Babylon add-on changelog
 
+## Blender 3.3.0 ##
+* 31 October 2022
+
+* No major changes or enhancements, just responding to those things required for Blender 3.3 
+
 ## Blender 2.93.5 ##
 * 08 January 2022
 
