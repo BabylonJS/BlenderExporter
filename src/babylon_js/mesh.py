@@ -48,6 +48,7 @@ class Mesh(FCurveAnimatable):
         Logger.log('processing begun of mesh:  ' + self.name)
         self.define_animations(bpyMesh, True, True, True)
 
+        self.customProps = bpyMesh.items()
         self.isVisible = bpyMesh.visible_get()
         self.isPickable = bpyMesh.data.isPickable
         self.isEnabled = not bpyMesh.data.disabled
@@ -600,6 +601,18 @@ class Mesh(FCurveAnimatable):
             compressedIndices.append(matricesIndicesCompressed)
 
         return compressedIndices
+
+    def writeCustomProperties(self, file_handler):
+        file_handler.write(',"metadata": {')
+        noComma = True
+        for k, v in self.customProps:
+            print('writing custom prop:', k, v)
+            if type(v) == str: write_string(file_handler, k, v, noComma)
+            elif type(v) == float: write_float(file_handler, k, v, noComma)
+            elif type(v) == int: write_int(file_handler, k, v, noComma)
+            noComma = False
+        file_handler.write('}')
+
 # - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - -
     def to_json_file(self, file_handler):
         Logger.log('writing mesh:  ' +  self.name, 1)
@@ -611,6 +624,9 @@ class Mesh(FCurveAnimatable):
         if hasattr(self, 'materialId'): write_string(file_handler, 'materialId', self.materialId)
         write_int(file_handler, 'billboardMode', self.billboardMode)
         write_vector(file_handler, 'position', self.position)
+
+        if self.customProps:
+           self.writeCustomProperties(file_handler)
 
         if hasattr(self, "rotationQuaternion"):
             write_quaternion(file_handler, 'rotationQuaternion', self.rotationQuaternion)
@@ -838,43 +854,7 @@ class MeshInstance:
 
         file_handler.write('}')
 #===============================================================================
-class Node(FCurveAnimatable):
-    def __init__(self, node):
-        Logger.log('processing begun of node:  ' + node.name)
-        self.define_animations(node, True, True, True)  #Should animations be done when forcedParent
-        self.name = node.name
 
-        if node.parent and node.parent.type != 'ARMATURE':
-            self.parentId = node.parent.name
-
-        loc, rot, scale = node.matrix_local.decompose()
-
-        self.position = loc
-        if node.rotation_mode == 'QUATERNION':
-            self.rotationQuaternion = rot
-        else:
-            self.rotation = scale_vector(rot.to_euler('YXZ'), -1)
-        self.scaling = scale
-        self.isVisible = False
-        self.isEnabled = not DEF_DISABLED
-# - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - -
-    def to_json_file(self, file_handler):
-        file_handler.write('{')
-        write_string(file_handler, 'name', self.name, True)
-        write_string(file_handler, 'id', self.name)
-        if hasattr(self, 'parentId'): write_string(file_handler, 'parentId', self.parentId)
-
-        write_vector(file_handler, 'position', self.position)
-        if hasattr(self, "rotationQuaternion"):
-            write_quaternion(file_handler, "rotationQuaternion", self.rotationQuaternion)
-        else:
-            write_vector(file_handler, 'rotation', self.rotation)
-        write_vector(file_handler, 'scaling', self.scaling)
-        write_bool(file_handler, 'isVisible', self.isVisible)
-        write_bool(file_handler, 'isEnabled', self.isEnabled)
-
-        super().to_json_file(file_handler) # Animations
-        file_handler.write('}')
 #===============================================================================
 class SubMesh:
     def __init__(self, materialIndex, verticesStart, indexStart, verticesCount, indexCount):

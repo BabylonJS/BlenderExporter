@@ -17,6 +17,8 @@ from os import path, makedirs
 import time
 import calendar
 
+from .node import Node
+
 #===============================================================================
 class JsonExporter:
     nameSpace   = None  # assigned in execute
