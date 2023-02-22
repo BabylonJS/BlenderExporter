@@ -48,7 +48,7 @@ class Mesh(FCurveAnimatable):
         Logger.log('processing begun of mesh:  ' + self.name)
         self.define_animations(bpyMesh, True, True, True)
 
-        self.customProps = bpyMesh.items()
+        self.customProps = bpyMesh.data.items()
         self.isVisible = bpyMesh.visible_get()
         self.isPickable = bpyMesh.data.isPickable
         self.isEnabled = not bpyMesh.data.disabled
@@ -608,7 +608,7 @@ class Mesh(FCurveAnimatable):
         for k, v in self.customProps:
             print('writing custom prop:', k, v)
             if type(v) == str: write_string(file_handler, k, v, noComma)
-            elif type(v) == float: write_float(file_handler, k, v, noComma)
+            elif type(v) == float: write_float(file_handler, k, v, FLOAT_PRECISION_DEFAULT, noComma)
             elif type(v) == int: write_int(file_handler, k, v, noComma)
             noComma = False
         file_handler.write('}')

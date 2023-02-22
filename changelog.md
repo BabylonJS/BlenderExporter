@@ -1,5 +1,10 @@
 # Blender2Babylon add-on changelog
 
+## Blender 3.3.1 ##
+* 22 February 2023
+
+* Custom mesh properties which are either string, float, or integer written as metadata.
+
 ## Blender 3.3.0 ##
 * 31 October 2022
 

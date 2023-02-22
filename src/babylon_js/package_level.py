@@ -281,7 +281,7 @@ def same_number(numberA, numberB, precision = FLOAT_PRECISION_DEFAULT):
     if numberA is None or numberB is None: return False
 
     fmt = '%.' + str(precision) + 'f'
-    return format_float(numberA, fmt) == format_float(numberB, fmt) 
+    return format_float(numberA, fmt) == format_float(numberB, fmt)
 # - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - -
 def shouldBeCulled(object):
     collectionName = object.users_collection[0].name
@@ -329,8 +329,10 @@ def write_string(file_handler, name, string, noComma = False):
         file_handler.write(',')
     file_handler.write('"' + name + '":"' + string + '"')
 
-def write_float(file_handler, name, float, precision = FLOAT_PRECISION_DEFAULT):
-    file_handler.write(',"' + name + '":' + format_f(float, precision = precision))
+def write_float(file_handler, name, float, precision = FLOAT_PRECISION_DEFAULT, noComma = False):
+    if noComma == False:
+        file_handler.write(',')
+    file_handler.write('"' + name + '":' + format_f(float, precision = precision))
 
 def write_int(file_handler, name, int, noComma = False):
     if noComma == False:
