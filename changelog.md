@@ -1,5 +1,10 @@
 # Blender2Babylon add-on changelog
 
+## Blender 3.3.2 ##
+* 21 July 2023
+
+* When export completes without errors or warnings, add a 'Export Completed' message to display.
+
 ## Blender 3.3.1 ##
 * 22 February 2023
 
