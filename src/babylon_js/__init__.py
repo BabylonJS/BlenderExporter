@@ -1,7 +1,7 @@
 bl_info = {
     'name': 'Babylon.js',
     'author': 'David Catuhe, Jeff Palmer',
-    'version': (3, 3, 1),
+    'version': (3, 3, 2),
     'blender': (3, 3, 0),
     'location': 'File > Export > Babylon.js (.babylon)',
     'description': 'Export Babylon.js scenes (.babylon)',
@@ -78,6 +78,9 @@ class JsonMain(bpy.types.Operator, ExportHelper):
 
         elif (exporter.nWarnings > 0):
             self.report({'WARNING'}, 'Processing completed, but ' + str(exporter.nWarnings) + ' WARNINGS were raised,  see log file.')
+
+        else:
+            self.report({'INFO'}, 'Export Completed')
 
         return {'FINISHED'}
 

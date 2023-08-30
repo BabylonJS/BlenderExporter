@@ -1,5 +1,11 @@
 # Blender2Babylon add-on changelog
 
+## Blender 3.3.2 ##
+* 31 August 2023
+
+* When export completes without errors or warnings, add a 'Export Completed' message to display.
+* Do not add a stray comma to the JSON for meshes and nodes if custom property not one of the types that can be handled {mwagner-webdev}
+
 ## Blender 3.3.1 ##
 * 22 February 2023
 
